@@ -29,7 +29,6 @@ PA12 OTG_FS_DP OTG1
 
 
 
-
 # Chip select pins
 PB12 FLASH1_CS CS
 PC14 OSD1_CS CS
