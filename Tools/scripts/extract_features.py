@@ -287,6 +287,7 @@ class ExtractFeatures(object):
             ('AP_QUICKTUNE_ENABLED', r'AP_Quicktune::update'),
             ('AP_CAN_LOGGING_ENABLED', r'AP_CANManager::can_logging_callback'),
             ('HAL_ENABLE_DRONECAN_DRIVERS', r'AP_DroneCAN::init'),
+            ('AP_OSD_LINK_STATS_EXTENSIONS_ENABLED', r'AP_OSD_Screen::draw_rc_tx_power'),
         ]
 
     def progress(self, msg):
