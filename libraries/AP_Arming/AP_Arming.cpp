@@ -1713,6 +1713,7 @@ bool AP_Arming::arm_checks(AP_Arming::Method method)
     return true;
 }
 
+<<<<<<< HEAD
 #if !AP_GPS_BLENDED_ENABLED
 bool AP_Arming::blending_auto_switch_checks(bool report)
 {
@@ -1726,6 +1727,8 @@ bool AP_Arming::blending_auto_switch_checks(bool report)
 }
 #endif
 
+=======
+>>>>>>> AP_Arming: force user to ack crashdump or get prearm failure
 #if AP_ARMING_CRASHDUMP_ACK_ENABLED
 bool AP_Arming::crashdump_checks(bool report)
 {
