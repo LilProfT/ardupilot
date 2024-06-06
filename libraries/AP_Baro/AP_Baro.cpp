@@ -49,6 +49,7 @@
 #include "AP_Baro_ExternalAHRS.h"
 #include "AP_Baro_ICP101XX.h"
 #include "AP_Baro_ICP201XX.h"
+#include "AP_Baro_BMP581.h"
 
 #include <AP_Airspeed/AP_Airspeed.h>
 #include <AP_AHRS/AP_AHRS.h>
