@@ -6,11 +6,7 @@
 
 #include "ap_version.h"
 
-<<<<<<< HEAD
 #define THISFIRMWARE "ArduCopter V4.6.1-beta1"
-=======
-#define THISFIRMWARE "ArduCopter V4.5.6-beta1"
->>>>>>> Copter: version string to 4.5.6-beta1
 
 // the following line is parsed by the autotest scripts
 #define FIRMWARE_VERSION 4,6,1,FIRMWARE_VERSION_TYPE_BETA
