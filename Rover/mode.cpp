@@ -562,6 +562,12 @@ Mode *Rover::mode_from_mode_num(const enum Mode::Number num)
         ret = (Mode *)g2.mode_dock_ptr;
         break;
 #endif
+    case Mode::Number::STALKING:
+        ret = &mode_stalking;
+        break;
+    case Mode::Number::BULLET:
+        ret = &mode_bullet;
+        break;
     default:
         break;
     }
