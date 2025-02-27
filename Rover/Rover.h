@@ -106,6 +106,8 @@ public:
 #if MODE_DOCK_ENABLED == ENABLED
     friend class ModeDock;
 #endif
+    friend class ModeStalking;
+    friend class ModeBullet;
 
     friend class RC_Channel_Rover;
     friend class RC_Channels_Rover;
@@ -262,7 +264,8 @@ private:
 #if MODE_DOCK_ENABLED == ENABLED
     ModeDock mode_dock;
 #endif
-
+    ModeStalking mode_stalking;
+    ModeBullet mode_bullet;
     // cruise throttle and speed learning
     typedef struct {
         LowPassFilterFloat speed_filt{2.0f};

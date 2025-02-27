@@ -28,6 +28,8 @@ public:
         SMART_RTL    = 12,
         GUIDED       = 15,
         INITIALISING = 16,
+        BULLET       = 17,
+        STALKING     = 18
     };
 
     // Constructor
@@ -903,3 +905,112 @@ protected:
     bool _loitering = false; // true if we are loitering after mission completion
 };
 #endif
+
+class ModeBullet : public Mode
+{
+public:
+
+    Number mode_number() const override { return Number::BULLET; }
+    const char *name4() const override { return "BULT"; }
+
+    // methods that affect movement of the vehicle in this mode
+    void update() override;
+
+    // attributes for mavlink system status reporting
+    bool has_manual_input() const override { return true; }
+
+    // steering requires velocity but not position
+    bool requires_position() const override { return false; }
+    bool requires_velocity() const override { return true; }
+
+    // return desired lateral acceleration
+    float get_desired_lat_accel() const override { return _desired_lat_accel; }
+
+private:
+
+    float _desired_lat_accel;   // desired lateral acceleration calculated from pilot steering input
+};
+
+class ModeStalking: public Mode
+{
+public:
+    Number mode_number() const override {return Number::STALKING;}
+    const char *name4() const override {return "Stlk";}
+    static const struct AP_Param::GroupInfo var_info[];
+
+    // methods that affect movement of the vehicle in this mode
+    void update() override;
+
+    // attributes of the mode
+    bool is_autopilot_mode() const override { return true; }
+
+    // return if external control is allowed in this mode (Guided or Guided-within-Auto)
+    bool in_guided_mode() const override { return true; }
+
+    // return heading (in degrees) and cross track error (in meters) for reporting to ground station (NAV_CONTROLLER_OUTPUT message)
+    float wp_bearing() const override;
+    float nav_bearing() const override;
+    float crosstrack_error() const override;
+    float get_desired_lat_accel() const override;
+
+    // return distance (in meters) to destination
+    float get_distance_to_destination() const override;
+
+    // return true if vehicle has reached destination
+    bool reached_destination() const override;
+
+    // set desired speed in m/s
+    bool set_desired_speed(float speed) override;
+
+    // get or set desired location
+    bool get_desired_location(Location& destination) const override WARN_IF_UNUSED;
+    bool set_desired_location(const Location &destination, Location next_destination = Location()) override WARN_IF_UNUSED;
+
+    // set desired heading and speed
+    void set_desired_heading_and_speed(float yaw_angle_cd, float target_speed);
+
+    // set desired heading-delta, turn-rate and speed
+    void set_desired_heading_delta_and_speed(float yaw_delta_cd, float target_speed);
+    void set_desired_turn_rate_and_speed(float turn_rate_cds, float target_speed);
+
+    // set steering and throttle (-1 to +1).  Only called from scripts
+    void set_steering_and_throttle(float steering, float throttle);
+
+    // vehicle start loiter
+    bool start_loiter();
+
+    // start stopping
+    void start_stop();
+
+    // guided limits
+    void limit_set(uint32_t timeout_ms, float horiz_max);
+    void limit_clear();
+    void limit_init_time_and_location();
+    bool limit_breached() const;
+protected:
+
+    enum class SubMode: uint8_t {
+        WP,
+        HeadingAndSpeed,
+        TurnRateAndSpeed,
+        Loiter,
+        SteeringAndThrottle,
+        Stop
+    };
+
+    // enum for GUID_OPTIONS parameter
+    enum class Options : int32_t {
+        SCurvesUsedForNavigation = (1U << 6)
+    };
+
+     // scurves provide path planning and object avoidance but cannot handle fast updates to the destination (for fast updates use position controller input shaping)
+    bool use_scurves_for_navigation() const;
+
+    SubMode _stalking_mode;      //storing which submode in this
+    bool send_notification;     // used to send one time notification to ground station
+
+    // initialise mode
+    bool _enter() override;
+private:
+
+};
