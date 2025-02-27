@@ -97,12 +97,49 @@ void AP_Mount_SToRM32::update()
             break;
     }
 
-    // resend target angles at least once per second
-    if (resend_now || ((AP_HAL::millis() - _last_send) > AP_MOUNT_STORM32_RESEND_MS)) {
-        send_do_mount_control(mnt_target.angle_rad);
+    if (mnt_target.target_type == MountTargetType::RATE) {
+        //Send at 5hz
+        if (resend_now || ((AP_HAL::millis() - _last_send) > 200)) {
+            send_target_rates(mnt_target.rate_rads);
+        }
+        GCS_SEND_TEXT(MAV_SEVERITY_DEBUG,"r: %f p: %f y: %f",mnt_target.rate_rads.roll, mnt_target.rate_rads.pitch,mnt_target.rate_rads.yaw);
+    }
+    else {
+            // resend target angles at least once per second
+        if (resend_now || ((AP_HAL::millis() - _last_send) > AP_MOUNT_STORM32_RESEND_MS)) {
+            send_do_mount_control(mnt_target.angle_rad);
+        }
     }
 }
 
+void AP_Mount_SToRM32::send_target_rates(const MountTarget& rate_target_degs) {
+     // exit immediately if not initialised
+    if (!_initialised) {
+        return;
+    }
+
+    // check we have space for the message
+    if (!HAVE_PAYLOAD_SPACE(_chan, COMMAND_LONG)) {
+        return;
+    }
+
+    // send command_long command containing a DO_GIMBAL_MANAGER_PITCHYAW command
+    mavlink_msg_command_long_send(_chan,
+                                  _sysid,
+                                  _compid,
+                                  MAV_CMD_DO_GIMBAL_MANAGER_PITCHYAW,
+                                  0,                                    //confirmation of zero means this is the first time this message has been sent
+                                  0,                                    //1: Pitch deg - unused
+                                  0,                                    //2: Yaw deg  - unused
+                                  degrees(rate_target_degs.pitch),     //3: Pitch rate - in deg/s
+                                  degrees(rate_target_degs.yaw),       //4: Yaw rate - in deg/s
+                                  0,                                    //5: Gimbal flags -unused
+                                  0,                                    //param6 ~ param7 unused
+                                  0);
+
+    // store time of send
+    _last_send = AP_HAL::millis();
+}
 // get attitude as a quaternion.  returns true on success
 bool AP_Mount_SToRM32::get_attitude_quaternion(Quaternion& att_quat)
 {

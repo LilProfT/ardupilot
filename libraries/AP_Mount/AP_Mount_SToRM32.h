@@ -36,6 +36,7 @@ private:
     // send_do_mount_control with latest angle targets
     void send_do_mount_control(const MountTarget& angle_target_rad);
 
+    void send_target_rates(const MountTarget& rate_target_degs);
     // internal variables
     bool _initialised;              // true once the driver has been initialised
     uint8_t _sysid;                 // sysid of gimbal
