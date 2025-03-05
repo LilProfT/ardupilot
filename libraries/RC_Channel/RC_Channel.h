@@ -270,9 +270,11 @@ public:
         MOUNT2_YAW =         217, // mount4 yaw input
         LOWEHEISER_THROTTLE= 218,  // allows for throttle on slider
 
+        TRACKING = 266,
         // inputs 248-249 are reserved for the Skybrush fork at
         // https://github.com/skybrush-io/ardupilot
-
+        BULLET  = 270,
+        DODGING = 271,
         // inputs for the use of onboard lua scripting
         SCRIPTING_1 =        300,
         SCRIPTING_2 =        301,
@@ -362,7 +364,7 @@ protected:
     void do_aux_function_sprayer(const AuxSwitchPos ch_flag);
     void do_aux_function_generator(const AuxSwitchPos ch_flag);
     void do_aux_function_fft_notch_tune(const AuxSwitchPos ch_flag);
-
+    void do_aux_function_enabled_track(const AuxSwitchPos ch_flag);
     typedef int8_t modeswitch_pos_t;
     virtual void mode_switch_changed(modeswitch_pos_t new_pos) {
         // no action by default (e.g. Tracker, Sub, who do their own thing)

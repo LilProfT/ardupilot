@@ -705,6 +705,7 @@ void RC_Channel::init_aux_function(const aux_func_t ch_option, const AuxSwitchPo
     case AUX_FUNC::CAMERA_AUTO_FOCUS:
     case AUX_FUNC::CAMERA_LENS:
     case AUX_FUNC::AHRS_TYPE:
+    case AUX_FUNC::TRACKING:
         run_aux_function(ch_option, ch_flag, AuxFuncTriggerSource::INIT);
         break;
     default:
@@ -1662,6 +1663,10 @@ bool RC_Channel::do_aux_function(const aux_func_t ch_option, const AuxSwitchPos 
         break;
     }
 #endif
+    case AUX_FUNC::TRACKING: {
+        do_aux_function_enabled_track(ch_flag);
+        break;
+    }
 
     // do nothing for these functions
     case AUX_FUNC::MOUNT1_ROLL:
@@ -1679,7 +1684,7 @@ bool RC_Channel::do_aux_function(const aux_func_t ch_option, const AuxSwitchPos 
     case AUX_FUNC::SCRIPTING_7:
     case AUX_FUNC::SCRIPTING_8:
         break;
-
+    
     case AUX_FUNC::LOWEHEISER_THROTTLE:
     case AUX_FUNC::LOWEHEISER_STARTER:
         // monitored by the library itself
@@ -1796,6 +1801,24 @@ void RC_Channels::convert_options(const RC_Channel::aux_func_t old_option, const
         if ((RC_Channel::aux_func_t)c->option.get() == old_option) {
             c->option.set_and_save((int16_t)new_option);
         }
+    }
+}
+
+void RC_Channel::do_aux_function_enabled_track(const AuxSwitchPos ch_flag)
+{
+    switch (ch_flag) {
+        case AuxSwitchPos::HIGH:
+            AP_Param::set_and_save_by_name("ENABLED_TRACK",1);
+            gcs().send_text(MAV_SEVERITY_WARNING,"Tracking Enabled");
+            break;
+        case AuxSwitchPos::MIDDLE:
+            break;
+        case AuxSwitchPos::LOW:
+            AP_Param::set_and_save_by_name("ENABLED_TRACK",0);
+            gcs().send_text(MAV_SEVERITY_WARNING,"Tracking Disabled");
+            break;
+        default:
+            break;
     }
 }
 

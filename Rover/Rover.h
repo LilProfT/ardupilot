@@ -265,7 +265,7 @@ private:
     ModeDock mode_dock;
 #endif
     ModeStalking mode_stalking;
-    ModeBullet mode_bullet;
+    ModeAttack mode_attack;
     // cruise throttle and speed learning
     typedef struct {
         LowPassFilterFloat speed_filt{2.0f};
