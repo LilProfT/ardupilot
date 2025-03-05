@@ -771,6 +771,7 @@ void RC_Channel::init_aux_function(const AUX_FUNC ch_option, const AuxSwitchPos 
 #endif
 #if AP_AHRS_ENABLED
     case AUX_FUNC::AHRS_TYPE:
+    case AUX_FUNC::TRACKING:
         run_aux_function(ch_option, ch_flag, AuxFuncTriggerSource::INIT);
         break;
 #endif
@@ -1845,6 +1846,10 @@ bool RC_Channel::do_aux_function(const AUX_FUNC ch_option, const AuxSwitchPos ch
         break;
     }
 #endif
+    case AUX_FUNC::TRACKING: {
+        do_aux_function_enabled_track(ch_flag);
+        break;
+    }
 
     // do nothing for these functions
 #if HAL_MOUNT_ENABLED
@@ -1996,6 +2001,24 @@ void RC_Channels::convert_options(const RC_Channel::AUX_FUNC old_option, const R
         if ((RC_Channel::AUX_FUNC)c->option.get() == old_option) {
             c->option.set_and_save((int16_t)new_option);
         }
+    }
+}
+
+void RC_Channel::do_aux_function_enabled_track(const AuxSwitchPos ch_flag)
+{
+    switch (ch_flag) {
+        case AuxSwitchPos::HIGH:
+            AP_Param::set_and_save_by_name("ENABLED_TRACK",1);
+            gcs().send_text(MAV_SEVERITY_WARNING,"Tracking Enabled");
+            break;
+        case AuxSwitchPos::MIDDLE:
+            break;
+        case AuxSwitchPos::LOW:
+            AP_Param::set_and_save_by_name("ENABLED_TRACK",0);
+            gcs().send_text(MAV_SEVERITY_WARNING,"Tracking Disabled");
+            break;
+        default:
+            break;
     }
 }
 

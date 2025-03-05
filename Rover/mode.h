@@ -28,7 +28,7 @@ public:
         SMART_RTL    = 12,
         GUIDED       = 15,
         INITIALISING = 16,
-        BULLET       = 17,
+        ATTACK       = 17,
         STALKING     = 18
     };
 
@@ -923,12 +923,17 @@ protected:
 };
 #endif
 
-class ModeBullet : public Mode
+class ModeAttack : public Mode
 {
 public:
 
-    Number mode_number() const override { return Number::BULLET; }
-    const char *name4() const override { return "BULT"; }
+    //Constructor
+    ModeAttack();
+
+    CLASS_NO_COPY(ModeAttack);
+
+    Number mode_number() const override { return Number::ATTACK; }
+    const char *name4() const override { return "ATCK"; }
 
     // methods that affect movement of the vehicle in this mode
     void update() override;
@@ -943,8 +948,13 @@ public:
     // return desired lateral acceleration
     float get_desired_lat_accel() const override { return _desired_lat_accel; }
 
+    //Parameter table
+    static const struct AP_Param::GroupInfo var_info[];
 private:
-
+    AP_Float sidedist;        // circle radius in meters
+    AP_Float dspeed;         // vehicle speed in m/s.  If zero uses WP_SPEED
+    AP_Float angle;      // direction 0:clockwise, 1:counter-clockwise
+    
     float _desired_lat_accel;   // desired lateral acceleration calculated from pilot steering input
 };
 

@@ -230,6 +230,10 @@ public:
         // 254,255: reserved
 
         k_param_vehicle = 257, // vehicle common block of parameters
+
+        k_param_enabled_track = 299,
+        k_param_vt_tap_point,    //    Mismart parameter
+        k_param_hub_flight_id,
         };
 
     AP_Int16    format_version;
@@ -279,6 +283,9 @@ public:
     AP_Int8     mode5;
     AP_Int8     mode6;
 
+    AP_Int32        vt_tap_point;
+    AP_Int32        hub_flight_id;
+    AP_Int8         enabled_track;
     Parameters() {}
 };
 
