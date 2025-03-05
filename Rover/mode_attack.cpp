@@ -1,6 +1,39 @@
 #include "Rover.h"
 
-void ModeBullet::update()
+ const AP_Param::GroupInfo ModeAttack::var_info[] = {
+    // @Param: _RADIUS
+    // @DisplayName: Circle Radius
+    // @Description: Vehicle will circle the center at this distance
+    // @Units: m
+    // @Range: 0 100
+    // @Increment: 1
+    // @User: Standard
+    AP_GROUPINFO("_SIDEDIST", 1, ModeAttack, sidedist, 20),
+
+    // @Param: _SPEED
+    // @DisplayName: Circle Speed
+    // @Description: Vehicle will move at this speed around the circle.  If set to zero WP_SPEED will be used
+    // @Units: m/s
+    // @Range: 0 10
+    // @Increment: 0.1
+    // @User: Standard
+    AP_GROUPINFO("_SPEED", 2, ModeAttack, dspeed, 0),
+
+    // @Param: _DIR
+    // @DisplayName: Circle Direction
+    // @Description: Circle Direction
+    // @Values: 0:Clockwise, 1:Counter-Clockwise
+    // @User: Standard
+    AP_GROUPINFO("_ANGLE", 3, ModeAttack, angle, 0),
+
+    AP_GROUPEND
+};
+
+ModeAttack::ModeAttack() : Mode () {
+    AP_Param::setup_object_defaults(this, var_info);
+}
+
+void ModeAttack::update()
 {
     // get speed forward
     float speed;

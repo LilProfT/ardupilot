@@ -565,8 +565,8 @@ Mode *Rover::mode_from_mode_num(const enum Mode::Number num)
     case Mode::Number::STALKING:
         ret = &mode_stalking;
         break;
-    case Mode::Number::BULLET:
-        ret = &mode_bullet;
+    case Mode::Number::ATTACK:
+        ret = &mode_attack;
         break;
     default:
         break;

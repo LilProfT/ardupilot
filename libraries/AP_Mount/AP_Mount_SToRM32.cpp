@@ -99,10 +99,9 @@ void AP_Mount_SToRM32::update()
 
     if (mnt_target.target_type == MountTargetType::RATE) {
         //Send at 5hz
-        if (resend_now || ((AP_HAL::millis() - _last_send) > 200)) {
+        if (resend_now || ((AP_HAL::millis() - _last_send) > 500)) {
             send_target_rates(mnt_target.rate_rads);
         }
-        GCS_SEND_TEXT(MAV_SEVERITY_DEBUG,"r: %f p: %f y: %f",mnt_target.rate_rads.roll, mnt_target.rate_rads.pitch,mnt_target.rate_rads.yaw);
     }
     else {
             // resend target angles at least once per second
@@ -127,7 +126,7 @@ void AP_Mount_SToRM32::send_target_rates(const MountTarget& rate_target_degs) {
     mavlink_msg_command_long_send(_chan,
                                   _sysid,
                                   _compid,
-                                  MAV_CMD_DO_GIMBAL_MANAGER_PITCHYAW,
+                                  MAV_CMD_DO_MOUNT_CONTROL,
                                   0,                                    //confirmation of zero means this is the first time this message has been sent
                                   0,                                    //1: Pitch deg - unused
                                   0,                                    //2: Yaw deg  - unused

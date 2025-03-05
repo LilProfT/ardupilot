@@ -210,7 +210,27 @@ const AP_Param::Info Rover::var_info[] = {
     GSCALAR(mode6,           "MODE6",         (int8_t)Mode::Number::MANUAL),
 
     // variables not in the g class which contain EEPROM saved variables
+    //@Param: VT_TAP_POINT
+    //@DisplayName: Visual tracking tap point
+    //@Description: Using this param to store tap point coordinate from GCS.
+    //@Units: 
+    //@Range: 
+    //@Increment: 1
+    //@User: Standard
+    GSCALAR(vt_tap_point, "VT_TAP_POINT",0),
 
+    //@Param: HUB_FLIGHT_ID
+    //@DisplayName: Visual tracking tap point
+    //@Description: Using this param to store tap point coordinate from GCS.
+    //@Units: 
+    //@Range: 
+    //@Increment: 1
+    //@User: Standard
+    GSCALAR(hub_flight_id, "HUB_FLIGHT_ID",0),
+    // variables not in the g class which contain EEPROM saved variables
+
+    GSCALAR(enabled_track, "ENABLED_TRACK",0),
+    
     // @Group: COMPASS_
     // @Path: ../libraries/AP_Compass/AP_Compass.cpp
     GOBJECT(compass,                "COMPASS_", Compass),
