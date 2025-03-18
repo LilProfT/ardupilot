@@ -772,6 +772,10 @@ void RC_Channel::init_aux_function(const AUX_FUNC ch_option, const AuxSwitchPos 
 #if AP_AHRS_ENABLED
     case AUX_FUNC::AHRS_TYPE:
     case AUX_FUNC::TRACKING:
+    case AUX_FUNC::FORWARD:
+    case AUX_FUNC::DODGING_LEFT:
+    case AUX_FUNC::DODGING_RIGHT:
+    case AUX_FUNC::MANUAL_REGAIN:
         run_aux_function(ch_option, ch_flag, AuxFuncTriggerSource::INIT);
         break;
 #endif

@@ -566,7 +566,7 @@ Mode *Rover::mode_from_mode_num(const enum Mode::Number num)
         ret = &mode_stalking;
         break;
     case Mode::Number::ATTACK:
-        ret = &mode_attack;
+        ret = (Mode *)g2.mode_attack_ptr;
         break;
     default:
         break;
