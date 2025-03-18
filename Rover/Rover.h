@@ -107,7 +107,7 @@ public:
     friend class ModeDock;
 #endif
     friend class ModeStalking;
-    friend class ModeBullet;
+    friend class ModeAttack;
 
     friend class RC_Channel_Rover;
     friend class RC_Channels_Rover;

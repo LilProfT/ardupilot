@@ -932,6 +932,11 @@ public:
 
     CLASS_NO_COPY(ModeAttack);
 
+    enum class Direction : uint8_t {
+        LEFT,   //moving left from the yaw direction
+        RIGHT,  //moving right from the yaw direction
+    };
+    
     Number mode_number() const override { return Number::ATTACK; }
     const char *name4() const override { return "ATCK"; }
 
@@ -945,17 +950,117 @@ public:
     bool requires_position() const override { return false; }
     bool requires_velocity() const override { return true; }
 
-    // return desired lateral acceleration
-    float get_desired_lat_accel() const override { return _desired_lat_accel; }
+    //move to side
+    bool move_to_side(Direction dir);
+    // return distance (in meters) to destination
+    float get_distance_to_destination() const override { return _distance_to_destination; }
 
+    //return to manual stage
+    void return_to_manual_control();
+
+    //move forward in exactly 100m
+    void move_forward();
+    
     //Parameter table
     static const struct AP_Param::GroupInfo var_info[];
+
 private:
-    AP_Float sidedist;        // circle radius in meters
-    AP_Float dspeed;         // vehicle speed in m/s.  If zero uses WP_SPEED
-    AP_Float angle;      // direction 0:clockwise, 1:counter-clockwise
+    enum AttackStage {
+        MANUAL, //Manual dodging control
+        FORWARD,
+        AUTO    //Auto dodging control
+    } stage;
     
-    float _desired_lat_accel;   // desired lateral acceleration calculated from pilot steering input
+    // auxiliary switch function:
+    enum class ModeFuncOpt : uint8_t {
+        MANUAL_REGAINED,    // regain to manual stage
+        DODGING_LEFT,       // do moving to left side, auto stage
+        DODGING_RIGHT,      // do moving to right side, auto stage
+        FORWARD             // do moving forward, auto stage
+    };
+    
+    // Structure used to detect and debounce sub mode function changes
+    struct {
+        int8_t debounce_pos = -1;
+        int8_t current_pos = -1;
+        uint32_t last_edge_time_ms;
+    } subfunc_state;
+
+    struct {
+        float speed;    // vehicle's target speed in attack mode
+        float yaw_rad;  // earth-frame angle of target yaw
+        Vector2p pos;   // latest position target sent to position controller
+        Vector2f vel;   // latest velocity target sent to position controller
+        Vector2f accel; // latest accel target sent to position controller
+    } target;
+
+    //Mode initialised function
+    bool _enter() override;
+    //auto control process
+    void auto_control();
+    //manual control process
+    void manual_control();
+    //slightly move left or right to dodging
+    void do_sidestep_movement();
+    //move 100m forward with full speed
+    void do_forward_movement();
+
+    //read rc pwm value and convert it to switch position
+    bool read_rc_input(uint8_t &pos);
+    //set sub function based on switch position
+    void set_submode_function(uint8_t pos, ModeFuncOpt &func);
+    //check changing switch stage
+    bool debounce_check(int8_t pos);
+    //reset switch stage
+    void reset_subfunc_switch();
+
+
+    //Calculate next destination base on side distance and angle
+    bool calc_next_dest(Direction dir, Location &next_dest);
+    //Set target by differential heading and speed
+    void set_desired_heading_delta_and_speed(float yaw_delta_cd, float target_speed);
+    //Set target by heading and speed
+    void set_desired_heading_and_speed(float yaw_angle_cd, float target_speed);
+    //Set direction
+    void set_desired_direction(Direction dir);
+
+    //AP Parameter variables
+    AP_Float side_dist;         // Side distance
+    AP_Float dspeed;            // vehicle speed in m/s.  If zero uses 1.5 x cruise speed
+    AP_Int32 turn_timems;       // turn timeout
+    AP_Float side_angle;        // Turning angle
+    AP_Int32 forward_timems;    // Forward timeout
+    AP_Int8 use_mix_channel;    // Flags for using combined in 1 RC channel
+
+    RC_Channel *mode_func_channel = nullptr;
+    // pwm value under which we consider that Radio value is invalid
+    static const uint16_t RC_MIN_LIMIT_PWM = 800;
+    // pwm value above which we consider that Radio value is invalid
+    static const uint16_t RC_MAX_LIMIT_PWM = 2200;
+    uint8_t ch_pos;
+    ModeFuncOpt _sub_func;
+
+    //Private mode variables
+    Vector2f current_dest;
+    Direction _dir;    //left or right position stored
+    bool is_auto;
+    uint32_t _wp_nav_time_ms = 0;
+    
+    // private members for waypoint navigation
+    bool send_notification;
+    float _distance_to_destination; // distance from vehicle to final destination in meters
+    bool _reached_destination;  // true once the vehicle has reached the destination
+    bool use_posctrl = false; //Use position control, if disable use throttle and steering controller
+    float _distance_to_origin; // distance from vehicle to final destination in meters
+
+    //Throttle and heading
+    float _origin_yaw;
+    Location _origin_pos;
+    bool have_attitude_target = false;
+    uint32_t _des_att_time_ms;  // system time last call to set_desired_attitude was made (used for timeout)
+    float _desired_yaw_cd;      // desired yaw in centi-degrees.  used in Auto, Guided and Loiter
+    float _desired_speed;       // desired speed used only in HeadingAndSpeed submode
+    
 };
 
 class ModeStalking: public Mode

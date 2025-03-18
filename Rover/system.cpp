@@ -204,9 +204,10 @@ bool Rover::gcs_mode_enabled(const Mode::Number mode_num) const
         (uint8_t)Mode::Number::RTL,
         (uint8_t)Mode::Number::SMART_RTL,
         (uint8_t)Mode::Number::GUIDED,
-#if MODE_DOCK_ENABLED
-        (uint8_t)Mode::Number::DOCK
+#if MODE_DOCK_ENABLED == ENABLED
+        (uint8_t)Mode::Number::DOCK,
 #endif
+        (uint8_t)Mode::Number::ATTACK
     };
 
     return !block_GCS_mode_change((uint8_t)mode_num, mode_list, ARRAY_SIZE(mode_list));
