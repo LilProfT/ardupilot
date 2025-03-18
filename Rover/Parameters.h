@@ -450,6 +450,9 @@ public:
     // FS GCS timeout trigger time
     AP_Float fs_gcs_timeout;
 
+    //Pointer to the mode for the G2 table since it's no copy class
+    class ModeAttack *mode_attack_ptr;
+
     class ModeCircle mode_circle;
 };
 

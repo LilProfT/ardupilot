@@ -725,6 +725,10 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
     // @Path: mode_circle.cpp
     AP_SUBGROUPINFO(mode_circle, "CIRC", 57, ParametersG2, ModeCircle),
 
+    // @Group: ATCK
+    // @Path: mode_attack.cpp
+    AP_SUBGROUPPTR(mode_attack_ptr, "ATCK", 58, ParametersG2, ModeAttack),    
+
     AP_GROUPEND
 };
 
@@ -783,6 +787,7 @@ ParametersG2::ParametersG2(void)
     windvane(),
     pos_control(attitude_control),
     wp_nav(attitude_control, pos_control),
+    mode_attack_ptr(&rover.mode_attack),
     sailboat()
 {
     AP_Param::setup_object_defaults(this, var_info);

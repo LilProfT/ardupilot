@@ -52,8 +52,8 @@ void RC_Channel_Rover::init_aux_function(const aux_func_t ch_option, const AuxSw
     case AUX_FUNC::SMART_RTL:
     case AUX_FUNC::STEERING:
     case AUX_FUNC::WIND_VANE_DIR_OFSSET:
-    case AUX_FUNC::BULLET:
-    case AUX_FUNC::DODGING:
+    case AUX_FUNC::ATTACKMODE:
+    case AUX_FUNC::ATCK_FUNC_CTRL:
         break;
     case AUX_FUNC::SAILBOAT_MOTOR_3POS:
         do_aux_function_sailboat_motor_3pos(ch_flag);
@@ -253,13 +253,69 @@ bool RC_Channel_Rover::do_aux_function(const aux_func_t ch_option, const AuxSwit
             gcs().send_text(MAV_SEVERITY_CRITICAL, "Steering trim saved!");
         }
         break;
+    case AUX_FUNC::ATTACKMODE:
+        do_aux_function_change_mode(rover.mode_attack,ch_flag);
+        break;
 
+    case AUX_FUNC::MANUAL_REGAIN:
+        if(rover.control_mode == &rover.mode_attack) {
+            switch (ch_flag) {
+                    case AuxSwitchPos::LOW:
+                    case AuxSwitchPos::MIDDLE:
+                        break;
+                    case AuxSwitchPos::HIGH:
+                        rover.mode_attack.return_to_manual_control();
+                        break;
+            }
+        }
+        break;
+
+    case AUX_FUNC::DODGING_LEFT:
+        if(rover.control_mode == &rover.mode_attack) {
+            switch (ch_flag) {
+                    case AuxSwitchPos::LOW:
+                    case AuxSwitchPos::MIDDLE:
+                        GCS_SEND_TEXT(MAV_SEVERITY_DEBUG,"return manual control");
+                        break;
+                    case AuxSwitchPos::HIGH:
+                        rover.mode_attack.move_to_side(ModeAttack::Direction::LEFT);
+                        break;
+            }
+        }
+        break;
+    case AUX_FUNC::DODGING_RIGHT:
+        if(rover.control_mode == &rover.mode_attack) {
+            switch (ch_flag) {
+                    case AuxSwitchPos::LOW:
+                    case AuxSwitchPos::MIDDLE:
+                        GCS_SEND_TEXT(MAV_SEVERITY_DEBUG,"return manual control");
+                        break;
+                    case AuxSwitchPos::HIGH:
+                        rover.mode_attack.move_to_side(ModeAttack::Direction::RIGHT);
+                        break;
+            }
+        }
+        break;
+    case AUX_FUNC::FORWARD:
+        if(rover.control_mode == &rover.mode_attack) {
+            switch (ch_flag) {
+                case AuxSwitchPos::LOW:
+                case AuxSwitchPos::MIDDLE:
+                    GCS_SEND_TEXT(MAV_SEVERITY_DEBUG,"return manual control");
+                    break;
+                case AuxSwitchPos::HIGH:
+                    rover.mode_attack.move_forward();
+                    break;
+            }
+        }
+        break;
     // manual input, nothing to do
     case AUX_FUNC::MAINSAIL:
     case AUX_FUNC::PITCH:
     case AUX_FUNC::ROLL:
     case AUX_FUNC::WALKING_HEIGHT:
     case AUX_FUNC::WIND_VANE_DIR_OFSSET:
+    case AUX_FUNC::ATCK_FUNC_CTRL:
         break;
 
     default:

@@ -273,8 +273,15 @@ public:
         TRACKING = 266,
         // inputs 248-249 are reserved for the Skybrush fork at
         // https://github.com/skybrush-io/ardupilot
-        BULLET  = 270,
-        DODGING = 271,
+        
+        //USV: For special attack mode
+        FORWARD  = 270,
+        DODGING_LEFT = 271,
+        DODGING_RIGHT = 272,
+        ATCK_FUNC_CTRL = 273,
+        ATTACKMODE = 274,
+        MANUAL_REGAIN = 275,
+
         // inputs for the use of onboard lua scripting
         SCRIPTING_1 =        300,
         SCRIPTING_2 =        301,

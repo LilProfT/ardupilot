@@ -706,6 +706,10 @@ void RC_Channel::init_aux_function(const aux_func_t ch_option, const AuxSwitchPo
     case AUX_FUNC::CAMERA_LENS:
     case AUX_FUNC::AHRS_TYPE:
     case AUX_FUNC::TRACKING:
+    case AUX_FUNC::FORWARD:
+    case AUX_FUNC::DODGING_LEFT:
+    case AUX_FUNC::DODGING_RIGHT:
+    case AUX_FUNC::MANUAL_REGAIN:
         run_aux_function(ch_option, ch_flag, AuxFuncTriggerSource::INIT);
         break;
     default:
