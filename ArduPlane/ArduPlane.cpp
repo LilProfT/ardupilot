@@ -1029,7 +1029,6 @@ bool Plane::flight_option_enabled(FlightOptions flight_option) const
 void Plane::precland_update(void)
 {
     // alt will be unused if we pass false through as the second parameter:
-<<<<<<< HEAD
 #if AP_RANGEFINDER_ENABLED
     return g2.precland.update(rangefinder_state.height_estimate*100, rangefinder_state.in_range);
 #else
@@ -1047,10 +1046,6 @@ void Plane::precland_update(void)
 void Plane::update_quicktune(void)
 {
     quicktune.update(control_mode->supports_quicktune());
-=======
-    return g2.precland.update(rangefinder_state.height_estimate*100,
-                              rangefinder_state.in_range && rangefinder_state.in_use);
->>>>>>> Plane: compile in AC_PrecLand for scripting
 }
 #endif
 
