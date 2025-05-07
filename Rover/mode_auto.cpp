@@ -31,6 +31,8 @@ bool ModeAuto::_enter()
     // set flag to start mission
     waiting_to_start = true;
 
+    //avoidance flags
+    _simple_avoid = false;
     return true;
 }
 
@@ -87,11 +89,18 @@ void ModeAuto::update()
             if (rover.is_boat() && g2.wp_nav.reached_destination() && !g2.wp_nav.is_fast_waypoint()) {
                 keep_navigating = !start_loiter();
             }
-
-            // update navigation controller
-            if (keep_navigating) {
-                navigate_to_waypoint();
+            
+            // avoidance first then navigate to waypoint
+            if (_simple_avoid) {
+                do_avoidance_movement();
             }
+            else {
+                // update navigation controller
+                if (keep_navigating) {
+                    navigate_to_waypoint();
+                }
+            }
+            
             break;
         }
 
@@ -1055,3 +1064,38 @@ bool ModeAuto::verify_nav_script_time()
     return false;
 }
 #endif
+
+void ModeAuto::simple_avoidance_trigger(Direction dir) 
+{
+    _simple_avoid = true;
+    _dir = (dir == Direction::LEFT) ? -1 : 1;
+
+    _desired_yaw_avoid = wrap_180_cd(ahrs.yaw_sensor + _dir * g2.q_avoid_angle * 100.0f);
+    _avoid_speed = is_positive(g2.q_avoid_speed) ? g2.q_avoid_speed : g2.wp_nav.get_speed_max();
+
+    _origin_yaw = ahrs.yaw_sensor;
+    _origin_pos = rover.current_loc;
+    GCS_SEND_TEXT(MAV_SEVERITY_INFO,"Simple avoid %s", (dir == Direction::LEFT) ? "LEFT" : "RIGHT");
+}
+
+void ModeAuto::simple_avoidance_off()
+{
+    _simple_avoid = false;
+    GCS_SEND_TEXT(MAV_SEVERITY_INFO,"Return to path");
+
+}
+
+void ModeAuto::do_avoidance_movement() 
+{
+ 
+    //Run throttle and steering controller
+    calc_steering_to_heading(_desired_yaw_avoid);
+
+    calc_throttle(_avoid_speed, true);
+        
+    _distance_to_origin = rover.current_loc.get_distance(_origin_pos);
+
+    if (_distance_to_origin >= g2.q_avoid_dist) {
+        simple_avoidance_off();
+    }
+}

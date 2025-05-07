@@ -230,7 +230,7 @@ const AP_Param::Info Rover::var_info[] = {
     // variables not in the g class which contain EEPROM saved variables
 
     GSCALAR(enabled_track, "ENABLED_TRACK",0),
-    
+
     // @Group: COMPASS_
     // @Path: ../libraries/AP_Compass/AP_Compass.cpp
     GOBJECT(compass,                "COMPASS_", Compass),
@@ -717,6 +717,12 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
     // @Group: ATCK
     // @Path: mode_attack.cpp
     AP_SUBGROUPPTR(mode_attack_ptr, "ATCK", 58, ParametersG2, ModeAttack),    
+
+    AP_GROUPINFO("Q_AVOID_DIST", 59, ParametersG2, q_avoid_dist, 0),
+
+    AP_GROUPINFO("Q_AVOID_ANGLE", 60, ParametersG2, q_avoid_angle, 0),
+
+    AP_GROUPINFO("Q_AVOID_SPD", 61, ParametersG2, q_avoid_speed, 0),
 
     AP_GROUPEND
 };

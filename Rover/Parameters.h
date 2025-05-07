@@ -283,9 +283,10 @@ public:
     AP_Int8     mode5;
     AP_Int8     mode6;
 
-    AP_Int32        vt_tap_point;
-    AP_Int32        hub_flight_id;
-    AP_Int8         enabled_track;
+    AP_Int32    vt_tap_point;
+    AP_Int32    hub_flight_id;
+    AP_Int8     enabled_track;
+
     Parameters() {}
 };
 
@@ -446,6 +447,13 @@ public:
     class ModeAttack *mode_attack_ptr;
 
     class ModeCircle mode_circle;
+
+    AP_Float    q_avoid_dist;
+
+    AP_Float    q_avoid_speed;
+
+    AP_Float    q_avoid_angle;
+
 };
 
 extern const AP_Param::Info var_info[];

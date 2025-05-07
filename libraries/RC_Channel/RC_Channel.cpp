@@ -776,6 +776,7 @@ void RC_Channel::init_aux_function(const AUX_FUNC ch_option, const AuxSwitchPos 
     case AUX_FUNC::DODGING_LEFT:
     case AUX_FUNC::DODGING_RIGHT:
     case AUX_FUNC::MANUAL_REGAIN:
+    case AUX_FUNC::FOLLOW_OBJECT:
         run_aux_function(ch_option, ch_flag, AuxFuncTriggerSource::INIT);
         break;
 #endif
@@ -1875,7 +1876,7 @@ bool RC_Channel::do_aux_function(const AUX_FUNC ch_option, const AuxSwitchPos ch
     case AUX_FUNC::SCRIPTING_8:
 #endif
         break;
-    
+
     case AUX_FUNC::LOWEHEISER_THROTTLE:
     case AUX_FUNC::LOWEHEISER_STARTER:
         // monitored by the library itself
