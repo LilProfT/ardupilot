@@ -216,6 +216,8 @@ protected:
     float _distance_to_destination; // distance from vehicle to final destination in meters
     bool _reached_destination;  // true once the vehicle has reached the destination
     float _desired_yaw_cd;      // desired yaw in centi-degrees.  used in Auto, Guided and Loiter
+
+    float _desired_yaw_avoid;
 };
 
 
@@ -247,6 +249,11 @@ public:
 
     Number mode_number() const override { return Number::AUTO; }
     const char *name4() const override { return "AUTO"; }
+
+    enum class Direction : uint8_t {
+        LEFT,   //moving left from the yaw direction
+        RIGHT,  //moving right from the yaw direction
+    };
 
     // methods that affect movement of the vehicle in this mode
     void update() override;
@@ -300,6 +307,9 @@ public:
         ACRO      = 2,
         MANUAL    = 3,
     };
+
+    void simple_avoidance_trigger(Direction dir);
+    void simple_avoidance_off(); 
 
 protected:
 
@@ -405,6 +415,17 @@ private:
 
     // Mission change detector
     AP_Mission_ChangeDetector mis_change_detector;
+
+    //Avoidance pattern
+    void do_avoidance_movement();
+    int8_t _dir;
+    bool _simple_avoid;
+    float _origin_yaw;
+    float _distance_to_origin;
+    float _distance_to_origin2;
+    // float _desired_yaw_avoid;
+    float _avoid_speed;
+    Location _origin_pos;
 };
 
 class ModeCircle : public Mode
@@ -954,7 +975,7 @@ public:
     bool requires_velocity() const override { return true; }
 
     //move to side
-    bool move_to_side(Direction dir);
+    bool move_to_side(Direction dir, bool in_auto);
     // return distance (in meters) to destination
     float get_distance_to_destination() const override { return _distance_to_destination; }
 
@@ -964,6 +985,11 @@ public:
     //move forward in exactly 100m
     void move_forward();
     
+    void enabled_follow_target();
+    void disable_follow_target();
+
+    void handle_gimbal_device_attitude_status(const mavlink_message_t &msg);
+
     //Parameter table
     static const struct AP_Param::GroupInfo var_info[];
 
@@ -979,7 +1005,8 @@ private:
         MANUAL_REGAINED,    // regain to manual stage
         DODGING_LEFT,       // do moving to left side, auto stage
         DODGING_RIGHT,      // do moving to right side, auto stage
-        FORWARD             // do moving forward, auto stage
+        FORWARD,            // do moving forward, auto stage
+        FOLLOW              // Follow tracking target - auto steering, manual throttle control
     };
     
     // Structure used to detect and debounce sub mode function changes
@@ -1008,6 +1035,9 @@ private:
     //move 100m forward with full speed
     void do_forward_movement();
 
+    //follow target tracked by gimbal
+    void do_follow_target_by_heading();
+
     //read rc pwm value and convert it to switch position
     bool read_rc_input(uint8_t &pos);
     //set sub function based on switch position
@@ -1034,6 +1064,7 @@ private:
     AP_Float side_angle;        // Turning angle
     AP_Int32 forward_timems;    // Forward timeout
     AP_Int8 use_mix_channel;    // Flags for using combined in 1 RC channel
+    AP_Float _offset_zero;      //Camera zero angle offset
 
     RC_Channel *mode_func_channel = nullptr;
     // pwm value under which we consider that Radio value is invalid
@@ -1055,6 +1086,7 @@ private:
     bool _reached_destination;  // true once the vehicle has reached the destination
     bool use_posctrl = false; //Use position control, if disable use throttle and steering controller
     float _distance_to_origin; // distance from vehicle to final destination in meters
+    float _distance_to_origin2; // distance from vehicle to final destination in meters
 
     //Throttle and heading
     float _origin_yaw;
@@ -1064,6 +1096,11 @@ private:
     float _desired_yaw_cd;      // desired yaw in centi-degrees.  used in Auto, Guided and Loiter
     float _desired_speed;       // desired speed used only in HeadingAndSpeed submode
     
+    float _target_pan_angle;
+    uint32_t _last_target_status_ms;
+    bool _is_follow;
+    bool _auto_mode_triggered; //trigger by flag in auto mode
+    bool _path_return = false;
 };
 
 class ModeStalking: public Mode

@@ -47,6 +47,12 @@ const AP_Param::GroupInfo ModeAttack::var_info[] = {
     // @User: Standard
     AP_GROUPINFO("_FWD_TIME", 6, ModeAttack, forward_timems, 10000),
 
+    // @Param: _CAM_ZERO
+    // @DisplayName: Camera zero angle offset
+    // @Description: 
+    // @Values: ms
+    // @User: Standard
+    AP_GROUPINFO("_CAM_ZERO", 7, ModeAttack, _offset_zero, 0),
     AP_GROUPEND
 };
 
@@ -76,7 +82,7 @@ bool ModeAttack::_enter()
 
 void ModeAttack::update()
 {
-    if (use_mix_channel && read_rc_input(ch_pos)) {
+    if (use_mix_channel && read_rc_input(ch_pos) && !_auto_mode_triggered) {
         set_submode_function(ch_pos, _sub_func);
     }
 
@@ -107,6 +113,9 @@ void ModeAttack::auto_control()
             break;
         case ModeFuncOpt::FORWARD:
             do_forward_movement(); 
+            break;
+        case ModeFuncOpt::FOLLOW:
+            do_follow_target_by_heading();
             break;
         default:
             return_to_manual_control();
@@ -166,6 +175,20 @@ void ModeAttack::manual_control()
     set_steering(steering_out * 4500.0f);
 }
 
+// handle GIMBAL_DEVICE_ATTITUDE_STATUS message
+void ModeAttack::handle_gimbal_device_attitude_status(const mavlink_message_t &msg)
+{
+    mavlink_gimbal_device_attitude_status_t packet;
+
+
+    mavlink_msg_gimbal_device_attitude_status_decode(&msg, &packet);
+    //Pass to target tracking available
+    _target_pan_angle = wrap_360(packet.angular_velocity_z) - wrap_360(_offset_zero);
+    _last_target_status_ms = AP_HAL::millis();
+    GCS_SEND_TEXT(MAV_SEVERITY_DEBUG, "Target received :%f", _target_pan_angle);
+    
+}
+
 void ModeAttack::do_forward_movement() 
 {
     if (have_attitude_target) {
@@ -223,19 +246,102 @@ void ModeAttack::do_sidestep_movement()
                 //Return back to original heading without changing speed
                 set_desired_heading_and_speed(wrap_180_cd(_origin_yaw),dspeed);
                 if(abs(ahrs.yaw_sensor - _origin_yaw) <= 50) {
-                    have_attitude_target = false;
+
+                    //continue maintain attitude for a while
+                    _distance_to_origin2 = rover.current_loc.get_distance(_origin_pos);
+                    float dist = (2.0f * side_dist * cosf(radians(side_angle)))/cosf(radians(side_angle)/2);
+                    if (_distance_to_origin2 >= dist) {
+                        have_attitude_target = false;
+                    }
+                    
                 }
             }
         } else {
-            return_to_manual_control();
+                return_to_manual_control();
         }
-
         // stop vehicle if target not updated within 5 seconds
         if (have_attitude_target && (AP_HAL::millis() - _des_att_time_ms) > (uint32_t) turn_timems) {
             gcs().send_text(MAV_SEVERITY_WARNING, "timeout mode %f secs", (uint32_t) turn_timems/1000.0f);
             have_attitude_target = false;
             return_to_manual_control();
         }
+    }
+}
+
+void ModeAttack::do_follow_target_by_heading()
+{
+    // // stop vehicle if not received new tracking angle within 5 seconds
+    // if ((AP_HAL::millis() - _last_target_status_ms) > (uint32_t) 5000) {
+    //     gcs().send_text(MAV_SEVERITY_WARNING, "timeout mode %d secs", (uint32_t) 5000/1000);
+    //     return_to_manual_control();
+    //     _is_follow = false;
+    // }
+
+    // Speed Controller
+    float speed, desired_steering;
+    if (!attitude_control.get_forward_speed(speed)) {
+        float desired_throttle;
+        // convert pilot stick input into desired steering and throttle
+        get_pilot_desired_steering_and_throttle(desired_steering, desired_throttle);
+
+        // if vehicle is balance bot, calculate actual throttle required for balancing
+        if (rover.is_balancebot()) {    
+            rover.balancebot_pitch_control(desired_throttle);
+        }
+
+        // no valid speed, just use the provided throttle
+        g2.motors.set_throttle(desired_throttle);
+    } else {
+        float desired_speed;
+        // convert pilot stick input into desired steering and speed
+        get_pilot_desired_steering_and_speed(desired_steering, desired_speed);
+        calc_throttle(desired_speed, true);
+    }
+    
+    //Steering controller, if enabled it will auto by camera angle, disabled will control from pilot
+    uint8_t is_tracking = rover.g.enabled_track;
+    if (is_tracking) {
+        //Update target heading from gimbal
+        // float offset = _offset_zero;
+        // if ((AP_HAL::millis() - _last_target_status_ms) > (uint32_t) 100) {
+        //     _last_target_status_ms = AP_HAL::millis();
+        //     gcs().send_text(MAV_SEVERITY_WARNING, "Angle offset %d", (uint32_t) offset*100);
+        // } + offset*100
+
+        //Tracking is enable, turn the vehicle to target
+        _desired_yaw_cd = wrap_180_cd(ahrs.yaw_sensor + wrap_180_cd(_target_pan_angle));
+        // gcs().send_text(MAV_SEVERITY_WARNING, "_desired_yaw_cd %f", _desired_yaw_cd);
+
+        calc_steering_to_heading(_desired_yaw_cd);
+    }
+    else {
+        float steering_out;
+
+        // handle sailboats
+        if (!is_zero(desired_steering)) {
+            // steering input return control to user
+            rover.g2.sailboat.clear_tack();
+        }
+        if (rover.g2.sailboat.tacking()) {
+            // call heading controller during tacking
+
+            steering_out = attitude_control.get_steering_out_heading(rover.g2.sailboat.get_tack_heading_rad(),
+                                                                    g2.wp_nav.get_pivot_rate(),
+                                                                    g2.motors.limit.steer_left,
+                                                                    g2.motors.limit.steer_right,
+                                                                    rover.G_Dt);
+        } else {
+            // convert pilot steering input to desired turn rate in radians/sec
+            const float target_turn_rate = (desired_steering / 4500.0f) * radians(g2.acro_turn_rate);
+
+            // run steering turn rate controller and throttle controller
+            steering_out = attitude_control.get_steering_out_rate(target_turn_rate,
+                                                                g2.motors.limit.steer_left,
+                                                                g2.motors.limit.steer_right,
+                                                                rover.G_Dt);
+        }
+
+        set_steering(steering_out * 4500.0f);
     }
 }
 
@@ -253,13 +359,12 @@ bool ModeAttack::read_rc_input(uint8_t &pos)
     }
     if (rc_pwm < 1231) {            //800 < PWM < 1231
         pos = 0;
-    } else if (rc_pwm < 1491) {     //1231 < PWM < 1491
+    
+    } else if (rc_pwm < 1750) {     //1231 < PWM < 1750
         pos = 1;
-    } else if (rc_pwm < 1750) {     //1491 < PWM < 1750
-        pos = 2;
     }
     else {                          //1750 < PWM < 2000
-        pos = 3;
+        pos = 2;
     }
     
     //Check the rc signal debouncing
@@ -309,15 +414,11 @@ void ModeAttack::set_submode_function(uint8_t pos, ModeFuncOpt &func)
         break;
     case 1:
         func = ModeFuncOpt::DODGING_LEFT;
-        move_to_side(Direction::LEFT);
+        move_to_side(Direction::LEFT, false);
         break;
     case 2:
         func = ModeFuncOpt::DODGING_RIGHT;
-        move_to_side(Direction::RIGHT);
-        break;
-    case 3:
-        func = ModeFuncOpt::FORWARD;
-        move_forward();
+        move_to_side(Direction::RIGHT, false);
         break;
     default:
         func = ModeFuncOpt::MANUAL_REGAINED;
@@ -346,11 +447,14 @@ bool ModeAttack::calc_next_dest(Direction dir, Location &next_dest)
     return true;
 }
 
-bool ModeAttack::move_to_side(Direction dir) 
+bool ModeAttack::move_to_side(Direction dir, bool in_auto) 
 {
-    if (!use_mix_channel) {
+    // if (!use_mix_channel) {
+        set_desired_direction(dir);
         _sub_func = (dir == Direction::LEFT) ? ModeFuncOpt::DODGING_LEFT : ModeFuncOpt::DODGING_RIGHT;
-    }
+        _auto_mode_triggered = in_auto;
+
+    // }
     if (use_posctrl) {  //Calculate next location
         Location next_dest = rover.current_loc;
         float desired_speed = is_positive(dspeed) ? dspeed : rover.g.speed_cruise;
@@ -385,9 +489,9 @@ bool ModeAttack::move_to_side(Direction dir)
 
 void ModeAttack::move_forward() 
 {
-    if (!use_mix_channel) {
+    // if (!use_mix_channel) {
         _sub_func = ModeFuncOpt::FORWARD;
-    }
+    // }
 
     float desired_speed = g2.speed_max;
     //Check if valid of speed max value
@@ -421,13 +525,42 @@ void ModeAttack::set_desired_heading_and_speed(float yaw_angle_cd, float target_
 //Set heading back before doing a turn
 void ModeAttack::return_to_manual_control() 
 {
-    if (stage == AttackStage::AUTO) {
+    if (_auto_mode_triggered) {
+        _auto_mode_triggered = false; //reset flag
         stage = AttackStage::MANUAL;
         _sub_func = ModeFuncOpt::MANUAL_REGAINED;
-        GCS_SEND_TEXT(MAV_SEVERITY_INFO, "Return to manual control");
+        GCS_SEND_TEXT(MAV_SEVERITY_INFO, "Return to mission path");
+        rover.set_mode(Mode::Number::AUTO, ModeReason::MISSION_CMD);
+        return;
+    }
+
+    if (stage == AttackStage::AUTO) {
+        if (!_is_follow) {
+            stage = AttackStage::MANUAL;
+            _sub_func = ModeFuncOpt::MANUAL_REGAINED;
+            GCS_SEND_TEXT(MAV_SEVERITY_INFO, "Return to manual control");
+        }
+        else {
+            //Return to follow target mode
+            stage = AttackStage::AUTO;
+            _sub_func = ModeFuncOpt::FOLLOW;
+            GCS_SEND_TEXT(MAV_SEVERITY_INFO, "Return to follow target");
+        }
     }
 }
 
+void ModeAttack::enabled_follow_target()
+{
+        stage = AttackStage::AUTO;
+        _sub_func = ModeFuncOpt::FOLLOW;
+        _is_follow = true;
+        GCS_SEND_TEXT(MAV_SEVERITY_INFO, "Begin follow object");
+}
+void ModeAttack::disable_follow_target()
+{
+    _is_follow = false; 
+    return_to_manual_control();
+}
 void ModeAttack::set_desired_direction(Direction dir) 
 {
     _dir = dir;
