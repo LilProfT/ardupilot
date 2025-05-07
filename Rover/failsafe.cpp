@@ -83,6 +83,11 @@ void Rover::failsafe_trigger(uint8_t failsafe_type, const char* type_str, bool o
             switch ((FailsafeAction)g.fs_action.get()) {
             case FailsafeAction::None:
                 break;
+            case FailsafeAction::Loiter:
+                if(set_mode(mode_loiter, ModeReason::BATTERY_FAILSAFE)){
+                    break;
+                }
+                FALLTHROUGH;
             case FailsafeAction::SmartRTL:
                 if (set_mode(mode_smartrtl, ModeReason::FAILSAFE)) {
                     break;
@@ -114,6 +119,11 @@ void Rover::handle_battery_failsafe(const char* type_str, const int8_t action)
         switch ((FailsafeAction)action) {
             case FailsafeAction::None:
                 break;
+            case FailsafeAction::Loiter:
+            if(set_mode(mode_loiter, ModeReason::BATTERY_FAILSAFE)){
+                break;
+            }
+            FALLTHROUGH;
             case FailsafeAction::SmartRTL:
                 if (set_mode(mode_smartrtl, ModeReason::BATTERY_FAILSAFE)) {
                     break;
