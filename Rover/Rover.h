@@ -411,7 +411,8 @@ private:
         Hold          = 2,
         SmartRTL      = 3,
         SmartRTL_Hold = 4,
-        Terminate     = 5
+        Terminate     = 5,
+        Loiter        = 6,
     };
 
     enum class Failsafe_Options : uint32_t {
@@ -420,6 +421,7 @@ private:
 
     static constexpr int8_t _failsafe_priorities[] = {
                                                        (int8_t)FailsafeAction::Terminate,
+                                                       (int8_t)FailsafeAction::Loiter,
                                                        (int8_t)FailsafeAction::Hold,
                                                        (int8_t)FailsafeAction::RTL,
                                                        (int8_t)FailsafeAction::SmartRTL_Hold,

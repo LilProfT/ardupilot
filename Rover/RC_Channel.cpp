@@ -278,7 +278,7 @@ bool RC_Channel_Rover::do_aux_function(const aux_func_t ch_option, const AuxSwit
                         GCS_SEND_TEXT(MAV_SEVERITY_DEBUG,"return manual control");
                         break;
                     case AuxSwitchPos::HIGH:
-                        rover.mode_attack.move_to_side(ModeAttack::Direction::LEFT);
+                        rover.mode_attack.move_to_side(ModeAttack::Direction::LEFT, false);
                         break;
             }
         }
@@ -291,7 +291,7 @@ bool RC_Channel_Rover::do_aux_function(const aux_func_t ch_option, const AuxSwit
                         GCS_SEND_TEXT(MAV_SEVERITY_DEBUG,"return manual control");
                         break;
                     case AuxSwitchPos::HIGH:
-                        rover.mode_attack.move_to_side(ModeAttack::Direction::RIGHT);
+                        rover.mode_attack.move_to_side(ModeAttack::Direction::RIGHT, false);
                         break;
             }
         }
@@ -300,6 +300,8 @@ bool RC_Channel_Rover::do_aux_function(const aux_func_t ch_option, const AuxSwit
         if(rover.control_mode == &rover.mode_attack) {
             switch (ch_flag) {
                 case AuxSwitchPos::LOW:
+                    rover.mode_attack.return_to_manual_control();
+                    break;
                 case AuxSwitchPos::MIDDLE:
                     GCS_SEND_TEXT(MAV_SEVERITY_DEBUG,"return manual control");
                     break;
@@ -309,13 +311,43 @@ bool RC_Channel_Rover::do_aux_function(const aux_func_t ch_option, const AuxSwit
             }
         }
         break;
+    case AUX_FUNC::FOLLOW_OBJECT: 
+        if(rover.control_mode == &rover.mode_attack) {
+            switch(ch_flag) {
+                case AuxSwitchPos::LOW:
+                    rover.mode_attack.disable_follow_target();
+                    break;
+                case AuxSwitchPos::MIDDLE:
+                case AuxSwitchPos::HIGH:
+                    rover.mode_attack.enabled_follow_target();
+                    break;
+            }
+        }
+        break;
+    case AUX_FUNC::ATCK_FUNC_CTRL:
+        if(rover.control_mode == &rover.mode_auto) {
+            switch (ch_flag)
+            {
+            case AuxSwitchPos::LOW:
+                /* code */
+                // rover.set_mode(Mode::Number::AUTO, ModeReason::MISSION_CMD);
+                break;
+            case AuxSwitchPos::MIDDLE:
+                rover.mode_auto.simple_avoidance_trigger(ModeAuto::Direction::LEFT);
+                break;
+            case AuxSwitchPos::HIGH:
+                rover.mode_auto.simple_avoidance_trigger(ModeAuto::Direction::RIGHT);
+                break;
+            default:
+                break;
+            }
+        }
     // manual input, nothing to do
     case AUX_FUNC::MAINSAIL:
     case AUX_FUNC::PITCH:
     case AUX_FUNC::ROLL:
     case AUX_FUNC::WALKING_HEIGHT:
     case AUX_FUNC::WIND_VANE_DIR_OFSSET:
-    case AUX_FUNC::ATCK_FUNC_CTRL:
         break;
 
     default:

@@ -710,6 +710,7 @@ void RC_Channel::init_aux_function(const aux_func_t ch_option, const AuxSwitchPo
     case AUX_FUNC::DODGING_LEFT:
     case AUX_FUNC::DODGING_RIGHT:
     case AUX_FUNC::MANUAL_REGAIN:
+    case AUX_FUNC::FOLLOW_OBJECT:
         run_aux_function(ch_option, ch_flag, AuxFuncTriggerSource::INIT);
         break;
     default:
@@ -1539,12 +1540,12 @@ bool RC_Channel::do_aux_function(const aux_func_t ch_option, const AuxSwitchPos 
     case AUX_FUNC::RETRACT_MOUNT1: {
         AP_Mount *mount = AP::mount();
         if (mount == nullptr) {
-            break;
+        break;
         }
         switch (ch_flag) {
         case AuxSwitchPos::HIGH:
             mount->set_mode(0,MAV_MOUNT_MODE_RETRACT);
-            break;
+        break;
         case AuxSwitchPos::MIDDLE:
             // nothing
             break;
@@ -1688,7 +1689,7 @@ bool RC_Channel::do_aux_function(const aux_func_t ch_option, const AuxSwitchPos 
     case AUX_FUNC::SCRIPTING_7:
     case AUX_FUNC::SCRIPTING_8:
         break;
-    
+
     case AUX_FUNC::LOWEHEISER_THROTTLE:
     case AUX_FUNC::LOWEHEISER_STARTER:
         // monitored by the library itself

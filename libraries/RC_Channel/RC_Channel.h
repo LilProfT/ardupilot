@@ -281,6 +281,7 @@ public:
         ATCK_FUNC_CTRL = 273,
         ATTACKMODE = 274,
         MANUAL_REGAIN = 275,
+        FOLLOW_OBJECT = 276,
 
         // inputs for the use of onboard lua scripting
         SCRIPTING_1 =        300,
