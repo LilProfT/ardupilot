@@ -71,6 +71,7 @@
 #include "MissionItemProtocol_Waypoints.h"
 #include "MissionItemProtocol_Rally.h"
 #include "MissionItemProtocol_Fence.h"
+#include <AC_VCU/AC_Vcu.h>
 
 #include <AP_Notify/AP_Notify.h>
 #include <AP_Vehicle/AP_Vehicle_config.h>
@@ -403,6 +404,8 @@ bool GCS_MAVLINK::send_battery_status()
             last_battery_status_idx = battery_id;
         }
     }
+
+    
     return true;
 }
 #endif  // AP_BATTERY_ENABLED
@@ -4162,6 +4165,17 @@ void GCS_MAVLINK::handle_message(const mavlink_message_t &msg)
         handle_heartbeat(msg);
         break;
     }
+
+#if HAL_VCU_ENABLED
+    case MAVLINK_MSG_ID_BATTERY_STATUS:
+    {
+        AC_Vcu *vcu = AP::vcumonitor();
+        if (vcu) {
+            vcu->handle_vcu_message(msg);
+        }
+        break;
+    }
+#endif
 
     case MAVLINK_MSG_ID_COMMAND_ACK: {
         handle_command_ack(msg);

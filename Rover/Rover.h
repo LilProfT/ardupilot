@@ -45,6 +45,7 @@
 #include <AC_PrecLand/AC_PrecLand_config.h>
 #include <AP_Follow/AP_Follow_config.h>
 #include <AP_ExternalControl/AP_ExternalControl_config.h>
+#include <AC_VCU/AC_Vcu.h>
 #if AP_EXTERNAL_CONTROL_ENABLED
 #include "AP_ExternalControl_Rover.h"
 #endif
@@ -183,6 +184,10 @@ private:
     // Camera/Antenna mount tracking and stabilisation stuff
 #if HAL_MOUNT_ENABLED
     AP_Mount camera_mount;
+#endif
+
+#if HAL_VCU_ENABLED
+    AC_Vcu vcu;
 #endif
 
     // true if initialisation has completed

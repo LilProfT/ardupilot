@@ -99,6 +99,10 @@ void Rover::init_ardupilot()
     camera.init();
 #endif
 
+#if HAL_VCU_ENABLED
+    vcu.init();
+#endif
+
 #if AC_PRECLAND_ENABLED
     // initialise precision landing
     init_precland();

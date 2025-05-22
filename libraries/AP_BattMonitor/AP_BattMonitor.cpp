@@ -27,7 +27,7 @@
 #include "AP_BattMonitor_Synthetic_Current.h"
 #include "AP_BattMonitor_AD7091R5.h"
 #include "AP_BattMonitor_Scripting.h"
-
+#include "AP_BattMonitor_VCU.h"
 #include <AP_HAL/AP_HAL.h>
 
 #if HAL_ENABLE_DRONECAN_DRIVERS
@@ -604,6 +604,11 @@ AP_BattMonitor::init()
                 drivers[instance] = NEW_NOTHROW AP_BattMonitor_Scripting(*this, state[instance], _params[instance]);
                 break;
 #endif // AP_BATTERY_SCRIPTING_ENABLED
+#if AP_BATTERY_VCU_ENABLED
+            case Type::VCU:
+                drivers[instance] = new AP_BattMonitor_VCU(*this, state[instance], _params[instance]);
+                break;
+#endif // AP_BATTERY_VCU_ENABLED
             case Type::NONE:
             default:
                 break;

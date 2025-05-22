@@ -124,11 +124,15 @@ COMMON_VEHICLE_DEPENDENT_LIBRARIES = [
     'AP_OpenDroneID',
     'AP_CheckFirmware',
     'AP_ExternalControl',
+<<<<<<< HEAD
     'AP_JSON',
     'AP_Beacon',
     'AP_Arming',
     'AP_RCMapper',
     'AP_MultiHeap',
+=======
+    'AC_VCU',
+>>>>>>> Add VCU comm support
 ]
 
 def get_legacy_defines(sketch_name, bld):

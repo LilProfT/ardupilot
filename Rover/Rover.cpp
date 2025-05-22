@@ -113,6 +113,11 @@ const AP_Scheduler::Task Rover::scheduler_tasks[] = {
 #if AP_CAMERA_ENABLED
     SCHED_TASK_CLASS(AP_Camera,           &rover.camera,           update,         50,  200,  78),
 #endif
+
+#if HAL_VCU_ENABLED
+    // SCHED_TASK_CLASS(AP_Vcu,           &rover.vcu,           update,         50,  200,  78),
+#endif
+
     SCHED_TASK(gcs_failsafe_check,     10,    200,  81),
     SCHED_TASK(fence_check,            10,    200,  84),
     SCHED_TASK(ekf_check,              10,    100,  87),
@@ -397,6 +402,9 @@ void Rover::update_logging1(void)
         g2.proximity.log();
     }
 #endif
+
+    //Log vcu data
+    vcu.update_log();
 }
 
 /*

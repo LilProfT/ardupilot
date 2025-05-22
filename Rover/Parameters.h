@@ -234,6 +234,7 @@ public:
         k_param_enabled_track = 299,
         k_param_vt_tap_point,    //    Mismart parameter
         k_param_hub_flight_id,
+        k_param_vcu,
         };
 
     AP_Int16    format_version;

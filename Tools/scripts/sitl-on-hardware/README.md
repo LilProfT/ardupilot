@@ -55,7 +55,7 @@ You may need to power-cycle the board at this point.
 	AP: Barometer 1 calibration complete
 	AP: Barometer 2 calibration complete
 	Init Gyro**
-	AP: ArduPilot Ready
+	AP: Vehicle Autopilot Ready
 	Suggested EK3_BCOEF_* = 16.288, EK3_MCOEF = 0.208
 	Home: -35.36326 149.1652 alt=584.0000m hdg=353.0000
 	Smoothing reset at 0.001
