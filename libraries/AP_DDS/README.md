@@ -110,7 +110,7 @@ Run the simulator with the following command. If using UDP, the only parameter y
 | SERIAL1_BAUD | The serial baud rate for DDS | 57 |
 | SERIAL1_PROTOCOL | Set this to 45 to use DDS on the serial port | 0 |
 ```console
-# Wipe params till you see "AP: ArduPilot Ready"
+# Wipe params till you see "AP: Vehicle Autopilot Ready"
 # Select your favorite vehicle type
 sim_vehicle.py -w -v ArduPlane --console -DG --enable-dds
 

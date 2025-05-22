@@ -443,7 +443,7 @@ void AP_Vehicle::setup()
     // initialisation
     AP_Param::invalidate_count();
 
-    GCS_SEND_TEXT(MAV_SEVERITY_INFO, "ArduPilot Ready");
+    GCS_SEND_TEXT(MAV_SEVERITY_INFO, "Vehicle Autopilot Ready");
 
 #if AP_DDS_ENABLED
     if (!init_dds_client()) {
