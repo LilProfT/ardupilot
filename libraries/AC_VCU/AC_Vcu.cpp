@@ -9,7 +9,7 @@
 #include <AP_Logger/AP_Logger.h>
 #include <GCS_MAVLink/GCS.h>
 #include <AP_SerialManager/AP_SerialManager.h>
-
+#include <AP_AHRS/AP_AHRS.h>
 #include <AP_Logger/AP_Logger.h>
 #include <GCS_MAVLink/GCS.h>
 #include <AP_Math/AP_Math.h>
@@ -65,6 +65,21 @@ const AP_Param::GroupInfo AC_Vcu::var_info[] = {
     // @Range: 0 INT16_MAX
     // @User: Standard
     AP_GROUPINFO("_THRSH_EX",   5, AC_Vcu, _temp_threshold_ex, 90),
+
+    // @Param: _CAM_ZERO
+    // @DisplayName: Camera zero angle offset
+    // @Description: 
+    // @Values: ms
+    // @User: Standard
+    AP_GROUPINFO("_CAM_ZERO", 6, AC_Vcu, _offset_zero, 0),
+
+    // @Param: _CAM_ZERO
+    // @DisplayName: Camera zero angle offset
+    // @Description: 
+    // @Values: ms
+    // @User: Standard
+    AP_GROUPINFO("_INSTANCE_ID", 7, AC_Vcu, _instance, 0),
+
     AP_GROUPEND
 };
 /*
@@ -129,10 +144,25 @@ void AC_Vcu::handle_vcu_message(const mavlink_message_t &msg)
 
         }
         vcu_state.contactor_state = data.charge_state;
-        vcu_state.last_updated_ms = AP_HAL::millis();
+        vcu_state.last_thermo_update_ms = AP_HAL::millis();
     }
+}
+
+void AC_Vcu::handle_custom_gimbal_message(const mavlink_message_t &msg)
+{
+    //Decode message from vcu
+    mavlink_gimbal_device_attitude_status_t packet;
     
-    
+    mavlink_msg_gimbal_device_attitude_status_decode(&msg, &packet);
+    if(packet.target_component == MAV_COMP_ID_PERIPHERAL) {
+        //Only receive message from ID: 158
+    }
+    vcu_state.raw_angle = wrap_360(packet.angular_velocity_x);
+    vcu_state.zoom_pos = packet.angular_velocity_z;
+    //get relative pan angle of camera
+    vcu_state.pan_angle = wrap_360(packet.angular_velocity_x) - wrap_360(_offset_zero);
+    vcu_state.tilt_angle = packet.angular_velocity_y;
+    vcu_state.last_cam_update_ms = AP_HAL::millis();
 }
 
 void AC_Vcu::get_thermo_array_data(float *temp)
@@ -140,9 +170,14 @@ void AC_Vcu::get_thermo_array_data(float *temp)
     memcpy(temp,vcu_state.thermo_data,sizeof(vcu_state.thermo_data));
 }
 
-bool AC_Vcu::is_healthy(void) const
+bool AC_Vcu::is_themro_healthy(void) const
 {
-    return ((AP_HAL::millis() - vcu_state.last_updated_ms) < VCU_HEALTHY_LAST_RECEIVED_MS);
+    return ((AP_HAL::millis() - vcu_state.last_thermo_update_ms) < VCU_HEALTHY_LAST_RECEIVED_MS);
+}
+
+bool AC_Vcu::is_camera_healthy(void) const
+{
+    return ((AP_HAL::millis() - vcu_state.last_cam_update_ms) < VCU_HEALTHY_LAST_RECEIVED_MS);
 }
 
 // get latest battery status info.  returns true on success and populates arguments
@@ -150,7 +185,7 @@ bool AC_Vcu::get_batt_info(float &charge_state, float &current_amps, float &temp
 {
 
     // use battery info from display_system_state if available (tiller connection)
-    if ((AP_HAL::millis() - vcu_state.last_updated_ms) <= VCU_HEALTHY_LAST_RECEIVED_MS) {
+    if (is_themro_healthy()) {
         charge_state = vcu_state.contactor_state;
         current_amps = vcu_state.steering_angle;
         temp_C = vcu_state.throttle_pct;
@@ -161,9 +196,14 @@ bool AC_Vcu::get_batt_info(float &charge_state, float &current_amps, float &temp
 
     return false;
 }
-void AC_Vcu::send_mavlink_status(mavlink_channel_t chan)
+
+void AC_Vcu::send_mavlink_vcu_status(mavlink_channel_t chan)
 {
     if(!_enabled) {
+        return;
+    }
+
+    if (!is_themro_healthy()) {
         return;
     }
 
@@ -188,6 +228,40 @@ void AC_Vcu::send_mavlink_status(mavlink_channel_t chan)
         MAV_BATTERY_MODE_UNKNOWN,
         vcu_state.thermo_error_mask);
 }
+
+void AC_Vcu::send_mavlink_camera_status(mavlink_channel_t chan)
+{
+    if(!_enabled) {
+        return;
+    }
+
+    if (!is_camera_healthy()) {
+        return;
+    }
+
+    AP_AHRS &ahrs = AP::ahrs();
+    
+    //Camera yaw angle in NED
+    float pan_angle = wrap_360((vcu_state.pan_angle * 100 + ahrs.yaw_sensor)/100.0f);
+    uint16_t flags = GIMBAL_DEVICE_FLAGS_ROLL_LOCK | GIMBAL_DEVICE_FLAGS_RETRACT;
+    Quaternion quatt;
+    quatt.from_euler(0,vcu_state.tilt_angle,pan_angle);
+    const float quat_array[4] = {quatt.q1, quatt.q2, quatt.q3, quatt.q4};
+    mavlink_msg_gimbal_device_attitude_status_send(chan,
+                                                    0,   // target system
+                                                    0,   // target component
+                                                    AP_HAL::millis(),    // autopilot system time
+                                                    flags,
+                                                    quat_array,    // not used
+                                                    pan_angle,    // roll axis angular velocity (NaN for unknown)
+                                                    vcu_state.tilt_angle,    // pitch axis angular velocity (NaN for unknown)
+                                                    vcu_state.zoom_pos,    // yaw angle in NED (NaN for unknown)
+                                                    0,                                           // failure flags (not supported)
+                                                    vcu_state.raw_angle,    // delta_yaw (NaN for unknonw)
+                                                    std::numeric_limits<double>::quiet_NaN(),    // delta_yaw_velocity (NaN for unknonw)
+                                                    _instance + 1);  // gimbal_device_id);
+}
+
 
 #if HAL_LOGGING_ENABLED
 void AC_Vcu::log_status(void)

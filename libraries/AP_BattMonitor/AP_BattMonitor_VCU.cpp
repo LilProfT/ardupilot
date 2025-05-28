@@ -30,7 +30,7 @@ void AP_BattMonitor_VCU::read()
         return;
     }
 
-    if (!vcu->is_healthy()) {
+    if (!vcu->is_themro_healthy()) {
         _state.healthy = false;
         return;
     }

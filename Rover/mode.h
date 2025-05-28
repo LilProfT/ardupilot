@@ -1062,9 +1062,11 @@ private:
     AP_Float dspeed;            // vehicle speed in m/s.  If zero uses 1.5 x cruise speed
     AP_Int32 turn_timems;       // turn timeout
     AP_Float side_angle;        // Turning angle
+    AP_Float max_follow_angle;    // Forward timeout
+    AP_Float min_follow_angle;    // Forward timeout
+    AP_Float max_follow_turn_rate;
     AP_Int32 forward_timems;    // Forward timeout
     AP_Int8 use_mix_channel;    // Flags for using combined in 1 RC channel
-    AP_Float _offset_zero;      //Camera zero angle offset
 
     RC_Channel *mode_func_channel = nullptr;
     // pwm value under which we consider that Radio value is invalid

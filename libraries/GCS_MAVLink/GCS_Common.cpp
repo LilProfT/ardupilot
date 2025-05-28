@@ -4175,6 +4175,15 @@ void GCS_MAVLINK::handle_message(const mavlink_message_t &msg)
         }
         break;
     }
+    case MAVLINK_MSG_ID_GIMBAL_DEVICE_ATTITUDE_STATUS:
+    {
+        AC_Vcu *vcu = AP::vcumonitor();
+        if (vcu) {
+            vcu->handle_custom_gimbal_message(msg);
+        }
+        handle_mount_message(msg);
+        break;
+    }
 #endif
 
     case MAVLINK_MSG_ID_COMMAND_ACK: {
@@ -4294,13 +4303,11 @@ void GCS_MAVLINK::handle_message(const mavlink_message_t &msg)
 #endif
     case MAVLINK_MSG_ID_GIMBAL_REPORT:
     case MAVLINK_MSG_ID_GIMBAL_DEVICE_INFORMATION:
-    case MAVLINK_MSG_ID_GIMBAL_DEVICE_ATTITUDE_STATUS:
     case MAVLINK_MSG_ID_GIMBAL_MANAGER_SET_ATTITUDE:
     case MAVLINK_MSG_ID_GIMBAL_MANAGER_SET_PITCHYAW:
         handle_mount_message(msg);
         break;
 #endif
-
     case MAVLINK_MSG_ID_PARAM_VALUE:
         handle_param_value(msg);
         break;
@@ -5902,6 +5909,12 @@ void GCS_MAVLINK::send_global_position_int()
 #if HAL_MOUNT_ENABLED
 void GCS_MAVLINK::send_gimbal_device_attitude_status() const
 {
+    AC_Vcu *vcu = AP::vcumonitor();
+    if (vcu == nullptr) {
+        return;
+    }
+    vcu->send_mavlink_camera_status(chan);
+
     AP_Mount *mount = AP::mount();
     if (mount == nullptr) {
         return;
