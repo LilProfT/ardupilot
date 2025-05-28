@@ -800,9 +800,6 @@ void GCS_MAVLINK_Rover::handle_message(const mavlink_message_t &msg)
         handle_radio(msg);
         break;
         
-    case MAVLINK_MSG_ID_GIMBAL_DEVICE_ATTITUDE_STATUS:
-        rover.mode_attack.handle_gimbal_device_attitude_status(msg);
-        break;
     default:
         GCS_MAVLINK::handle_message(msg);
         break;

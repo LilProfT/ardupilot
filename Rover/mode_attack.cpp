@@ -47,12 +47,27 @@ const AP_Param::GroupInfo ModeAttack::var_info[] = {
     // @User: Standard
     AP_GROUPINFO("_FWD_TIME", 6, ModeAttack, forward_timems, 10000),
 
-    // @Param: _CAM_ZERO
-    // @DisplayName: Camera zero angle offset
+    // @Param: _FLW_MAXA
+    // @DisplayName: max angle in follow object mode
     // @Description: 
-    // @Values: ms
+    // @Values: deg
     // @User: Standard
-    AP_GROUPINFO("_CAM_ZERO", 7, ModeAttack, _offset_zero, 0),
+    AP_GROUPINFO("_FLW_MAXA", 7, ModeAttack, max_follow_angle, 30.0f),
+
+    // @Param: _FLW_MINA
+    // @DisplayName: min angle in follow object mode
+    // @Description: 
+    // @Values: deg
+    // @User: Standard
+    AP_GROUPINFO("_FLW_MINA", 8, ModeAttack, min_follow_angle, 5.0f),
+
+    // @Param: _FLW_TURN
+    // @DisplayName: max turn rate in follow object mode
+    // @Description: 
+    // @Values: deg/s
+    // @User: Standard
+    AP_GROUPINFO("_FLW_TURN", 9, ModeAttack, max_follow_turn_rate, 15.0f),
+
     AP_GROUPEND
 };
 
@@ -178,14 +193,14 @@ void ModeAttack::manual_control()
 // handle GIMBAL_DEVICE_ATTITUDE_STATUS message
 void ModeAttack::handle_gimbal_device_attitude_status(const mavlink_message_t &msg)
 {
-    mavlink_gimbal_device_attitude_status_t packet;
+    // mavlink_gimbal_device_attitude_status_t packet;
 
 
-    mavlink_msg_gimbal_device_attitude_status_decode(&msg, &packet);
-    //Pass to target tracking available
-    _target_pan_angle = wrap_360(packet.angular_velocity_z) - wrap_360(_offset_zero);
-    _last_target_status_ms = AP_HAL::millis();
-    GCS_SEND_TEXT(MAV_SEVERITY_DEBUG, "Target received :%f", _target_pan_angle);
+    // mavlink_msg_gimbal_device_attitude_status_decode(&msg, &packet);
+    // //Pass to target tracking available
+    // _target_pan_angle = wrap_360(packet.angular_velocity_z) - wrap_360(_offset_zero);
+    // _last_target_status_ms = AP_HAL::millis();
+    // GCS_SEND_TEXT(MAV_SEVERITY_DEBUG, "Target received :%f", _target_pan_angle);
     
 }
 
@@ -277,6 +292,10 @@ void ModeAttack::do_follow_target_by_heading()
     //     _is_follow = false;
     // }
 
+    if (!rover.vcu.is_camera_healthy()) {
+        return_to_manual_control();
+    }
+
     // Speed Controller
     float speed, desired_steering;
     if (!attitude_control.get_forward_speed(speed)) {
@@ -301,18 +320,15 @@ void ModeAttack::do_follow_target_by_heading()
     //Steering controller, if enabled it will auto by camera angle, disabled will control from pilot
     uint8_t is_tracking = rover.g.enabled_track;
     if (is_tracking) {
-        //Update target heading from gimbal
-        // float offset = _offset_zero;
-        // if ((AP_HAL::millis() - _last_target_status_ms) > (uint32_t) 100) {
-        //     _last_target_status_ms = AP_HAL::millis();
-        //     gcs().send_text(MAV_SEVERITY_WARNING, "Angle offset %d", (uint32_t) offset*100);
-        // } + offset*100
-
+        
         //Tracking is enable, turn the vehicle to target
-        _desired_yaw_cd = wrap_180_cd(ahrs.yaw_sensor + wrap_180_cd(_target_pan_angle));
-        // gcs().send_text(MAV_SEVERITY_WARNING, "_desired_yaw_cd %f", _desired_yaw_cd);
+        _target_pan_angle = constrain_float(wrap_180(rover.vcu.get_camera_pan_angle()), -max_follow_angle, max_follow_angle);
+        if(fabs((_target_pan_angle)) >= min_follow_angle) {
+            //Calc steering by delta yaw
+            _desired_yaw_cd = wrap_180_cd(ahrs.yaw_sensor + wrap_180_cd(_target_pan_angle * 100));
+            calc_steering_to_heading(_desired_yaw_cd,max_follow_turn_rate);
+        }
 
-        calc_steering_to_heading(_desired_yaw_cd);
     }
     else {
         float steering_out;
