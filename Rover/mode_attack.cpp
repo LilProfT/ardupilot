@@ -293,6 +293,7 @@ void ModeAttack::do_follow_target_by_heading()
     // }
 
     if (!rover.vcu.is_camera_healthy()) {
+        _is_follow = false;
         return_to_manual_control();
     }
 
