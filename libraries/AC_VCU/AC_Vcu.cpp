@@ -180,6 +180,11 @@ bool AC_Vcu::is_camera_healthy(void) const
     return ((AP_HAL::millis() - vcu_state.last_cam_update_ms) < VCU_HEALTHY_LAST_RECEIVED_MS);
 }
 
+bool AC_Vcu::is_yolo_healthy(void) const
+{
+    return ((AP_HAL::millis() - _obj_state.last_update_ms) < VCU_HEALTHY_LAST_RECEIVED_MS);
+}
+
 // get latest battery status info.  returns true on success and populates arguments
 bool AC_Vcu::get_batt_info(float &charge_state, float &current_amps, float &temp_C, uint8_t &pct_remaining, uint32_t &error_mask) const
 {
@@ -262,6 +267,50 @@ void AC_Vcu::send_mavlink_camera_status(mavlink_channel_t chan)
                                                     _instance + 1);  // gimbal_device_id);
 }
 
+/*
+   Set the object data based on a MAVLINK message
+*/
+void AC_Vcu::handle_distance_sensor_custom_msg(const mavlink_message_t &msg)
+{
+    mavlink_distance_sensor_t packet;
+    mavlink_msg_distance_sensor_decode(&msg, &packet);
+    sensor_type = (MAV_DISTANCE_SENSOR) packet.type;
+    // only accept distances for the configured sensor type
+    if (sensor_type != MAV_DISTANCE_SENSOR_UNKNOWN) {
+
+    }
+    _obj_state.last_update_ms = AP_HAL::millis();
+
+    _max_pixel_size = packet.max_distance;
+    _min_pixel_size = packet.min_distance;
+    
+    _obj_state.width = packet.quaternion[0];
+    _obj_state.height = packet.quaternion[1];
+
+    //Ignore any object if exceed size value
+    if (_obj_state.width > _max_pixel_size || _obj_state.width < _min_pixel_size) {
+        //Invalid object
+        return;    
+    }
+    //Ignore any object if exceed size value
+    if (_obj_state.height > _max_pixel_size || _obj_state.height < _min_pixel_size) {
+        //Invalid object
+        return;    
+    }
+    //Valid object - continue update
+    _obj_state.data_timestamp_ms = packet.time_boot_ms;
+    _obj_state.centerX = packet.quaternion[2];
+    _obj_state.centerY = packet.quaternion[3];
+}
+
+void AC_Vcu::get_object_pixel_data(PixelData &state)
+{
+    state.data_timestamp_ms = _obj_state.data_timestamp_ms;
+    state.height = _obj_state.height;
+    state.width = _obj_state.width;
+    state.centerX = _obj_state.centerX;
+    state.centerY = _obj_state.centerY;
+}
 
 #if HAL_LOGGING_ENABLED
 void AC_Vcu::log_status(void)

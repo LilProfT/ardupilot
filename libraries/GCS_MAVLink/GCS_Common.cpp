@@ -4092,6 +4092,12 @@ void GCS_MAVLINK::handle_can_frame(const mavlink_message_t &msg) const
 
 void GCS_MAVLINK::handle_distance_sensor(const mavlink_message_t &msg)
 {
+#if HAL_VCU_ENABLED
+    AC_Vcu *vcu = AP::vcumonitor();
+    if(vcu != nullptr) {
+        vcu->handle_distance_sensor_custom_msg(msg);
+    }
+#endif
 #if AP_RANGEFINDER_ENABLED
     RangeFinder *rangefinder = AP::rangefinder();
     if (rangefinder != nullptr) {

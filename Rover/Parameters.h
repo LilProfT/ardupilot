@@ -455,6 +455,8 @@ public:
 
     AP_Float    q_avoid_angle;
 
+    AP_Float    q_avoid_turn_rate;
+
 };
 
 extern const AP_Param::Info var_info[];

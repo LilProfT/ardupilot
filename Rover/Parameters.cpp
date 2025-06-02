@@ -723,11 +723,13 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
     // @Path: mode_attack.cpp
     AP_SUBGROUPPTR(mode_attack_ptr, "ATCK", 58, ParametersG2, ModeAttack),    
 
-    AP_GROUPINFO("Q_AVOID_DIST", 59, ParametersG2, q_avoid_dist, 0),
+    AP_GROUPINFO("QAVD_DIST", 59, ParametersG2, q_avoid_dist, 15),
 
-    AP_GROUPINFO("Q_AVOID_ANGLE", 60, ParametersG2, q_avoid_angle, 0),
+    AP_GROUPINFO("QAVD_ANGLE", 60, ParametersG2, q_avoid_angle, 20),
 
-    AP_GROUPINFO("Q_AVOID_SPD", 61, ParametersG2, q_avoid_speed, 0),
+    AP_GROUPINFO("QAVD_SPEED", 61, ParametersG2, q_avoid_speed, 8),
+    
+    AP_GROUPINFO("QAVD_TURN_RATE", 62, ParametersG2, q_avoid_turn_rate, 15),
 
     AP_GROUPEND
 };
