@@ -1131,17 +1131,17 @@ void ModeAuto::avoidance_data_check()
         last_data_timestamp_ms = object_data.data_timestamp_ms;
 
         //Check if object data in a dangerous zone
-        if( object_data.centerY < limit_y_down_pixel && // Object above screen limit down line
-            object_data.centerY > limit_y_up_pixel   && // Object under screen limit down line
+        if( object_data.centerY < (object_data.resolution_height - limit_y_down_pixel) && // Object above screen limit down line
+            object_data.centerY > (object_data.resolution_height * 0.5f) && // Object under screen limit down line
             object_data.height > object_size_threshold  // Object have big size so that it close to the vehicle
             )
         {
            //Trigger avoidance
-            if (object_data.centerX > 350 && object_data.centerX < 600) { 
+            if (object_data.centerX > (object_data.resolution_width * 0.5) && object_data.centerX < object_data.resolution_width) { 
                 //Data on the right zone, trigger avoid left
                 simple_avoidance_trigger(Direction::LEFT);
             }
-            else if(object_data.centerX < 350 && object_data.centerX > 100) {
+            else if(object_data.centerX < (object_data.resolution_width * 0.5) && object_data.centerX > 25) {
                 //Data on the left zone, trigger avoid right
                 simple_avoidance_trigger(Direction::RIGHT);
             }
