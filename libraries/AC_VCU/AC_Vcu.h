@@ -57,6 +57,8 @@ public:
         float width;
         float centerX;
         float centerY;
+        float resolution_width;
+        float resolution_height;
         uint32_t data_timestamp_ms;
         uint32_t last_update_ms;
     };

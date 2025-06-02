@@ -283,9 +283,15 @@ void AC_Vcu::handle_distance_sensor_custom_msg(const mavlink_message_t &msg)
 
     _max_pixel_size = packet.max_distance;
     _min_pixel_size = packet.min_distance;
-    
+    if (is_zero(_max_pixel_size) || is_zero(_min_pixel_size)) {
+        //Invalid size, maybe in idle state
+        return;
+    }
+
     _obj_state.width = packet.quaternion[0];
     _obj_state.height = packet.quaternion[1];
+    _obj_state.resolution_width = packet.horizontal_fov;
+    _obj_state.resolution_height = packet.vertical_fov;
 
     //Ignore any object if exceed size value
     if (_obj_state.width > _max_pixel_size || _obj_state.width < _min_pixel_size) {
@@ -310,6 +316,8 @@ void AC_Vcu::get_object_pixel_data(PixelData &state)
     state.width = _obj_state.width;
     state.centerX = _obj_state.centerX;
     state.centerY = _obj_state.centerY;
+    state.resolution_width = _obj_state.resolution_width;
+    state.resolution_height = _obj_state.resolution_height;
 }
 
 #if HAL_LOGGING_ENABLED

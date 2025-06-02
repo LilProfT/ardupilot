@@ -430,7 +430,7 @@ private:
     Location _origin_pos;
     uint8_t trigger_count = 0;
     const float object_size_threshold = 80.0f;
-    const float limit_y_down_pixel = 475.0f;
+    const float limit_y_down_pixel = 40.0f;
     const float limit_y_up_pixel = 250.0f;
 };
 
