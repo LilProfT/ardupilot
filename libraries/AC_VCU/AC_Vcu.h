@@ -27,12 +27,14 @@ public:
     
     void handle_vcu_message(const mavlink_message_t &msg);
     void handle_custom_gimbal_message(const mavlink_message_t &msg);
-
+    void handle_distance_sensor_custom_msg(const mavlink_message_t &msg);
     void send_mavlink_vcu_status(mavlink_channel_t chan);
     void send_mavlink_camera_status(mavlink_channel_t chan);
 
     bool is_themro_healthy(void) const;
     bool is_camera_healthy(void) const;
+    bool is_yolo_healthy(void) const;
+
 
     struct VcuMonitorState {
         uint8_t instance;
@@ -50,9 +52,19 @@ public:
         uint32_t last_cam_update_ms;
     };
 
+    struct PixelData {
+        float height;
+        float width;
+        float centerX;
+        float centerY;
+        uint32_t data_timestamp_ms;
+        uint32_t last_update_ms;
+    };
+
     void get_thermo_array_data(float *temp);
     bool get_batt_info(float &charge_state, float &current_amps, float &temp_C, uint8_t &pct_remaining, uint32_t &error_mask) const;
     float get_camera_pan_angle() {return vcu_state.pan_angle;}
+    void get_object_pixel_data(PixelData &state);
 private:;                             
     static AC_Vcu *_singleton;
     bool _initialised;
@@ -75,6 +87,10 @@ private:;
     mavlink_channel_t _chan = MAVLINK_COMM_0;        // mavlink channel used to communicate with VCU
 
     struct VcuMonitorState vcu_state;
+    struct PixelData _obj_state;
+    float _max_pixel_size;
+    float _min_pixel_size;
+    MAV_DISTANCE_SENSOR sensor_type;
 };
 
 namespace AP {

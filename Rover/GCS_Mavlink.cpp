@@ -812,12 +812,11 @@ void GCS_MAVLINK_Rover::handle_manual_control_axes(const mavlink_manual_control_
     manual_override(rover.channel_lateral, packet.r, 1000, 2000, tnow);
     manual_override(rover.channel_steer, packet.y, 1000, 2000, tnow);
     manual_override(rover.channel_throttle, packet.z, 0, 1000, tnow);
-    manual_override(rc().channel(4),packet.s, 1000, 2000, tnow);
-    manual_override(rc().channel(5),packet.t, 1000, 2000, tnow);
-    manual_override(rc().channel(6),packet.aux1, 1000, 2000, tnow);
-    manual_override(rc().channel(7),packet.aux2, 1000, 2000, tnow);
-    manual_override(rc().channel(8),packet.aux3, 1000, 2000, tnow);
-
+    manual_override(rc().channel(4),packet.s, 1000, 2000, tnow, rc().channel(4)->get_reverse());
+    manual_override(rc().channel(5),packet.t, 1000, 2000, tnow), rc().channel(5)->get_reverse();
+    manual_override(rc().channel(6),packet.aux1, 1000, 2000, tnow, rc().channel(6)->get_reverse());
+    manual_override(rc().channel(7),packet.aux2, 1000, 2000, tnow, rc().channel(7)->get_reverse());
+    manual_override(rc().channel(8),packet.aux3, 1000, 2000, tnow, rc().channel(8)->get_reverse());
 }
 
 void GCS_MAVLINK_Rover::handle_set_attitude_target(const mavlink_message_t &msg)

@@ -33,6 +33,7 @@ bool ModeAuto::_enter()
 
     //avoidance flags
     _simple_avoid = false;
+    trigger_count = 0;
     return true;
 }
 
@@ -80,6 +81,8 @@ void ModeAuto::update()
 
         mission.update();
     }
+
+    avoidance_data_check();
 
     switch (_submode) {
         case SubMode::WP:
@@ -1072,6 +1075,11 @@ bool ModeAuto::verify_nav_script_time()
 
 void ModeAuto::simple_avoidance_trigger(Direction dir) 
 {
+    if(trigger_count > 0) {
+        //Already trigger avoidance return and wait for next trigger
+        return;
+    }
+    trigger_count++;
     _simple_avoid = true;
     _dir = (dir == Direction::LEFT) ? -1 : 1;
 
@@ -1086,6 +1094,7 @@ void ModeAuto::simple_avoidance_trigger(Direction dir)
 void ModeAuto::simple_avoidance_off()
 {
     _simple_avoid = false;
+    trigger_count = 0;
     GCS_SEND_TEXT(MAV_SEVERITY_INFO,"Return to path");
 
 }
@@ -1094,13 +1103,48 @@ void ModeAuto::do_avoidance_movement()
 {
  
     //Run throttle and steering controller
-    calc_steering_to_heading(_desired_yaw_avoid);
+    calc_steering_to_heading(_desired_yaw_avoid,g2.q_avoid_turn_rate);
 
-    calc_throttle(_avoid_speed, true);
+    calc_throttle(_avoid_speed, false);
         
     _distance_to_origin = rover.current_loc.get_distance(_origin_pos);
 
     if (_distance_to_origin >= g2.q_avoid_dist) {
+        //Finish avoidance, return to path
         simple_avoidance_off();
+    }
+}
+
+void ModeAuto::avoidance_data_check()
+{
+    if (!rover.vcu.is_yolo_healthy()) {
+        // GCS_SEND_TEXT(MAV_SEVERITY_DEBUG, "No data from yolo");
+        // _simple_avoid = false;
+        return;
+    }
+    rover.vcu.get_object_pixel_data(object_data);
+
+    if(last_data_timestamp_ms != object_data.data_timestamp_ms) {
+        //Get the new data update
+        // GCS_SEND_TEXT(MAV_SEVERITY_DEBUG, "Data: %f %f %f %f", object_data.centerX, object_data.centerY, object_data.height, object_data.width);
+
+        last_data_timestamp_ms = object_data.data_timestamp_ms;
+
+        //Check if object data in a dangerous zone
+        if( object_data.centerY < limit_y_down_pixel && // Object above screen limit down line
+            object_data.centerY > limit_y_up_pixel   && // Object under screen limit down line
+            object_data.height > object_size_threshold  // Object have big size so that it close to the vehicle
+            )
+        {
+           //Trigger avoidance
+            if (object_data.centerX > 350 && object_data.centerX < 600) { 
+                //Data on the right zone, trigger avoid left
+                simple_avoidance_trigger(Direction::LEFT);
+            }
+            else if(object_data.centerX < 350 && object_data.centerX > 100) {
+                //Data on the left zone, trigger avoid right
+                simple_avoidance_trigger(Direction::RIGHT);
+            }
+        }
     }
 }
