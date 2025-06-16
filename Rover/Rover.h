@@ -428,7 +428,7 @@ private:
         Loiter        = 6,
         Engine_lock   = 7
     };
-
+    bool fence_failsafe_flags;
     enum class Failsafe_Options : uint32_t {
         Failsafe_Option_Active_In_Hold = (1<<0)
     };

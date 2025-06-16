@@ -794,7 +794,7 @@ ParametersG2::ParametersG2(void)
     wp_nav(attitude_control, pos_control),
     sailboat(),
     pos_control(attitude_control),
-    mode_attack_ptr(&rover.mode_attack),
+    mode_attack_ptr(&rover.mode_attack)
 {
     AP_Param::setup_object_defaults(this, var_info);
 }

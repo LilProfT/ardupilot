@@ -878,12 +878,7 @@ void GCS_MAVLINK_Rover::handle_message(const mavlink_message_t &msg)
     case MAVLINK_MSG_ID_SET_POSITION_TARGET_GLOBAL_INT:
         handle_set_position_target_global_int(msg);
         break;
-
-    case MAVLINK_MSG_ID_RADIO:
-    case MAVLINK_MSG_ID_RADIO_STATUS:
-        handle_radio(msg);
-        break;
-        
+      
     default:
         GCS_MAVLINK::handle_message(msg);
         break;

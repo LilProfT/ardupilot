@@ -1877,6 +1877,7 @@ bool RC_Channel::do_aux_function(const AUX_FUNC ch_option, const AuxSwitchPos ch
 #endif
         break;
 
+#if HAL_GENERATOR_ENABLED
     case AUX_FUNC::LOWEHEISER_THROTTLE:
     case AUX_FUNC::LOWEHEISER_STARTER:
         // monitored by the library itself
