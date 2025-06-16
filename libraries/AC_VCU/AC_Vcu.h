@@ -50,6 +50,9 @@ public:
         float raw_angle;
         uint32_t last_thermo_update_ms;
         uint32_t last_cam_update_ms;
+        uint32_t fsu_monitor_boards_state;
+        int8_t fsu_contactor_state;
+        uint32_t follow_flags;
     };
 
     struct PixelData {
@@ -67,6 +70,7 @@ public:
     bool get_batt_info(float &charge_state, float &current_amps, float &temp_C, uint8_t &pct_remaining, uint32_t &error_mask) const;
     float get_camera_pan_angle() {return vcu_state.pan_angle;}
     void get_object_pixel_data(PixelData &state);
+    bool get_target_locked() {return vcu_state.follow_flags; }
 private:;                             
     static AC_Vcu *_singleton;
     bool _initialised;

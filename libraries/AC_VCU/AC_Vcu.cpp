@@ -157,11 +157,12 @@ void AC_Vcu::handle_custom_gimbal_message(const mavlink_message_t &msg)
     if(packet.target_component == MAV_COMP_ID_PERIPHERAL) {
         //Only receive message from ID: 158
     }
-    vcu_state.raw_angle = wrap_360(packet.angular_velocity_x);
+    vcu_state.raw_angle = packet.angular_velocity_x; //-180->180range
     vcu_state.zoom_pos = packet.angular_velocity_z;
     //get relative pan angle of camera
-    vcu_state.pan_angle = wrap_360(packet.angular_velocity_x) - wrap_360(_offset_zero);
+    vcu_state.pan_angle = vcu_state.raw_angle - _offset_zero; //-180->180range
     vcu_state.tilt_angle = packet.angular_velocity_y;
+    vcu_state.follow_flags = packet.failure_flags;      //tracking flag is map to failure flag
     vcu_state.last_cam_update_ms = AP_HAL::millis();
 }
 
@@ -247,7 +248,7 @@ void AC_Vcu::send_mavlink_camera_status(mavlink_channel_t chan)
     AP_AHRS &ahrs = AP::ahrs();
     
     //Camera yaw angle in NED
-    float pan_angle = wrap_360((vcu_state.pan_angle * 100 + ahrs.yaw_sensor)/100.0f);
+    float pan_angle = wrap_360((wrap_180_cd(vcu_state.pan_angle * 100.0f) + ahrs.yaw_sensor)/100.0f);
     uint16_t flags = GIMBAL_DEVICE_FLAGS_ROLL_LOCK | GIMBAL_DEVICE_FLAGS_RETRACT;
     Quaternion quatt;
     quatt.from_euler(0,vcu_state.tilt_angle,pan_angle);
@@ -261,9 +262,9 @@ void AC_Vcu::send_mavlink_camera_status(mavlink_channel_t chan)
                                                     pan_angle,    // roll axis angular velocity (NaN for unknown)
                                                     vcu_state.tilt_angle,    // pitch axis angular velocity (NaN for unknown)
                                                     vcu_state.zoom_pos,    // yaw angle in NED (NaN for unknown)
-                                                    0,                                           // failure flags (not supported)
+                                                    vcu_state.follow_flags,                                           // failure flags (not supported)
                                                     vcu_state.raw_angle,    // delta_yaw (NaN for unknonw)
-                                                    std::numeric_limits<double>::quiet_NaN(),    // delta_yaw_velocity (NaN for unknonw)
+                                                    vcu_state.pan_angle,    // delta_yaw_velocity (NaN for unknonw)
                                                     _instance + 1);  // gimbal_device_id);
 }
 
@@ -294,10 +295,10 @@ void AC_Vcu::handle_distance_sensor_custom_msg(const mavlink_message_t &msg)
     _obj_state.resolution_height = packet.vertical_fov;
 
     //Ignore any object if exceed size value
-    if (_obj_state.width > _max_pixel_size || _obj_state.width < _min_pixel_size) {
-        //Invalid object
-        return;    
-    }
+    // if (_obj_state.width > _max_pixel_size || _obj_state.width < _min_pixel_size) {
+    //     //Invalid object
+    //     return;    
+    // }
     //Ignore any object if exceed size value
     if (_obj_state.height > _max_pixel_size || _obj_state.height < _min_pixel_size) {
         //Invalid object
@@ -336,22 +337,41 @@ void AC_Vcu::log_status(void)
 // @Field: LckSt: Contactor lock status
 // @Field: ErrV: Error bitmask value
 
-    AP::logger().WriteStreaming("VCU",
-                       "TimeUS,ICW,OCW,ECa,FCa,ExP,STR,RemPct,LckSt,ErrV",
-                       "s---------",
-                       "F---------",
-                       "Qfffffffff",
-                       AP_HAL::micros64(),
-                       float(vcu_state.thermo_data[0]),
-                       float(vcu_state.thermo_data[1]),
-                       float(vcu_state.thermo_data[2]),
-                       float(vcu_state.thermo_data[3]),
-                       float(vcu_state.thermo_data[4]),
-                       float(vcu_state.steering_angle),
-                       float(vcu_state.fuel_level_pct),
-                       float(vcu_state.contactor_state),
-                       float(vcu_state.thermo_error_mask));
+    // AP::logger().WriteStreaming("VCU",
+    //                    "TimeUS,ICW,OCW,ECa,FCa,ExP,STR,RemPct,LckSt,ErrV",
+    //                    "s---------",
+    //                    "F---------",
+    //                    "Qfffffffff",
+    //                    AP_HAL::micros64(),
+    //                    float(vcu_state.thermo_data[0]),
+    //                    float(vcu_state.thermo_data[1]),
+    //                    float(vcu_state.thermo_data[2]),
+    //                    float(vcu_state.thermo_data[3]),
+    //                    float(vcu_state.thermo_data[4]),
+    //                    float(vcu_state.steering_angle),
+    //                    float(vcu_state.fuel_level_pct),
+    //                    float(vcu_state.contactor_state),
+    //                    float(vcu_state.thermo_error_mask));
 
+    AP_AHRS &ahrs = AP::ahrs();
+    float pan_angle = wrap_360((wrap_180_cd(vcu_state.pan_angle * 100.0f) + ahrs.yaw_sensor)/100.0f);
+    AP::logger().WriteStreaming("VCU",
+                    "TimeUS,ICW,OCW,ECa,FCa,ExP,STR,LckSt,ErrV,AbsPan,DeltaPan,RawPan",
+                    "s-----------",
+                    "F-----------",
+                    "Qfffffffffff",
+                    AP_HAL::micros64(),
+                    float(vcu_state.thermo_data[0]),
+                    float(vcu_state.thermo_data[1]),
+                    float(vcu_state.thermo_data[2]),
+                    float(vcu_state.thermo_data[3]),
+                    float(vcu_state.thermo_data[4]),
+                    float(vcu_state.steering_angle),
+                    float(vcu_state.contactor_state),
+                    float(vcu_state.thermo_error_mask),
+                    float(pan_angle),
+                    float(vcu_state.pan_angle),
+                    float(vcu_state.raw_angle));
 }
 #endif // LOGGING_ENABLED
 

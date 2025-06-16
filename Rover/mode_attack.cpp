@@ -260,7 +260,7 @@ void ModeAttack::do_sidestep_movement()
                 // GCS_SEND_TEXT(MAV_SEVERITY_INFO, "Return heading to %f", _origin_yaw);
                 //Return back to original heading without changing speed
                 set_desired_heading_and_speed(wrap_180_cd(_origin_yaw),dspeed);
-                if(abs(ahrs.yaw_sensor - _origin_yaw) <= 50) {
+                if(fabsf(ahrs.yaw_sensor - _origin_yaw) <= 50) {
 
                     //continue maintain attitude for a while
                     _distance_to_origin2 = rover.current_loc.get_distance(_origin_pos);
@@ -320,18 +320,28 @@ void ModeAttack::do_follow_target_by_heading()
     
     //Steering controller, if enabled it will auto by camera angle, disabled will control from pilot
     uint8_t is_tracking = rover.g.enabled_track;
-    if (is_tracking) {
-        
+    if (is_tracking && rover.vcu.get_target_locked()) {
+        //target is locked, begin change usv heading
+        // GCS_SEND_TEXT(MAV_SEVERITY_DEBUG,"Target locked, begin follow");
         //Tracking is enable, turn the vehicle to target
         _target_pan_angle = constrain_float(wrap_180(rover.vcu.get_camera_pan_angle()), -max_follow_angle, max_follow_angle);
-        if(fabs((_target_pan_angle)) >= min_follow_angle) {
-            //Calc steering by delta yaw
-            _desired_yaw_cd = wrap_180_cd(ahrs.yaw_sensor + wrap_180_cd(_target_pan_angle * 100));
+
+        // _target_pan_angle = constrain_float(wrap_180(side_angle.get()), -max_follow_angle, max_follow_angle);
+
+        if(fabsf((_target_pan_angle)) <= min_follow_angle) {
+            _target_pan_angle = 0.0f;
+            _desired_yaw_cd = wrap_180_cd(ahrs.yaw_sensor + (_target_pan_angle * 100.0f));
+            calc_steering_to_heading(_desired_yaw_cd,max_follow_turn_rate);
+            // GCS_SEND_TEXT(MAV_SEVERITY_DEBUG, "Target followed",_target_pan_angle);
+        }
+        else {
+            _desired_yaw_cd = wrap_180_cd(ahrs.yaw_sensor + (_target_pan_angle * 100.0f));
             calc_steering_to_heading(_desired_yaw_cd,max_follow_turn_rate);
         }
-
+        // GCS_SEND_TEXT(MAV_SEVERITY_DEBUG, "Delta: %f, Cur: %f Desired: %f", _target_pan_angle,wrap_180_cd(ahrs.yaw_sensor)/100.0f,_desired_yaw_cd/100.0f);
     }
-    else {
+
+    else { //Manual heading for pilot to support locked target
         float steering_out;
 
         // handle sailboats

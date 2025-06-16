@@ -457,6 +457,7 @@ public:
 
     AP_Float    q_avoid_turn_rate;
 
+    AP_Float    q_avoid_obj_size;
 };
 
 extern const AP_Param::Info var_info[];
