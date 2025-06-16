@@ -14,7 +14,6 @@ void Rover::fence_check()
     if (!arming.is_armed()) {
         return;
     }
-
     // if there is a new breach take action
     if (new_breaches) {
         // if the user wants some kind of response and motors are armed
@@ -24,10 +23,16 @@ void Rover::fence_check()
                 switch ((FailsafeAction)fence.get_action()) {
                 case FailsafeAction::None:
                     break;
-                case FailsafeAction::Loiter:
-                if(set_mode(mode_loiter, ModeReason::BATTERY_FAILSAFE)){
+                case FailsafeAction::Engine_lock:
+                    arming.disarm(AP_Arming::Method::FENCEBREACH);
+                    //Lock the contactor of engine
+                    rc().channel(8)->set_override(1900,AP_HAL::millis());
+                    fence_failsafe_flags = true;
                     break;
-                }
+                case FailsafeAction::Loiter:
+                    if(set_mode(mode_loiter, ModeReason::BATTERY_FAILSAFE)){
+                        break;
+                    }
                 FALLTHROUGH;
                 case FailsafeAction::SmartRTL:
                     if (set_mode(mode_smartrtl, ModeReason::BATTERY_FAILSAFE)) {
@@ -58,7 +63,13 @@ void Rover::fence_check()
         }
         LOGGER_WRITE_ERROR(LogErrorSubsystem::FAILSAFE_FENCE, LogErrorCode(new_breaches));
 
-    } else if (orig_breaches) {
+    } 
+
+    else if (!new_breaches) {
+        fence_failsafe_flags = false;
+    }
+
+    else if (orig_breaches) {
         // record clearing of breach
         LOGGER_WRITE_ERROR(LogErrorSubsystem::FAILSAFE_FENCE,
                                  LogErrorCode::ERROR_RESOLVED);

@@ -35,7 +35,7 @@ protected:
 
     void send_nav_controller_output() const override;
     void send_pid_tuning() override;
-
+    void set_failsafe_flags(bool flags);
 private:
 
     void handle_message(const mavlink_message_t &msg) override;

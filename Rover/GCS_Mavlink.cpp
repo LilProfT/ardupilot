@@ -816,7 +816,13 @@ void GCS_MAVLINK_Rover::handle_manual_control_axes(const mavlink_manual_control_
     manual_override(rc().channel(5),packet.t, 1000, 2000, tnow), rc().channel(5)->get_reverse();
     manual_override(rc().channel(6),packet.aux1, 1000, 2000, tnow, rc().channel(6)->get_reverse());
     manual_override(rc().channel(7),packet.aux2, 1000, 2000, tnow, rc().channel(7)->get_reverse());
-    manual_override(rc().channel(8),packet.aux3, 1000, 2000, tnow, rc().channel(8)->get_reverse());
+    //if failsafe flag is clear, override normally, if not, always trigger high
+    if (!rover.fence_failsafe_flags || !rover.fence.get_enabled_fences()) { 
+        manual_override(rc().channel(8),packet.aux3, 1000, 2000, tnow, rc().channel(8)->get_reverse());
+    }
+    else if (rover.fence_failsafe_flags) {
+        manual_override(rc().channel(8),1000, 1000, 2000, tnow, rc().channel(8)->get_reverse());
+    }
 }
 
 void GCS_MAVLINK_Rover::handle_set_attitude_target(const mavlink_message_t &msg)

@@ -83,6 +83,12 @@ void Rover::failsafe_trigger(uint8_t failsafe_type, const char* type_str, bool o
             switch ((FailsafeAction)g.fs_action.get()) {
             case FailsafeAction::None:
                 break;
+            case FailsafeAction::Engine_lock:
+                arming.disarm(AP_Arming::Method::GCSFAILSAFE);
+                //Lock the contactor of engine
+                rc().channel(8)->set_radio_in(1900);
+                fence_failsafe_flags = true;
+            break;
             case FailsafeAction::Loiter:
                 if(set_mode(mode_loiter, ModeReason::BATTERY_FAILSAFE)){
                     break;
@@ -118,6 +124,12 @@ void Rover::handle_battery_failsafe(const char* type_str, const int8_t action)
 {
         switch ((FailsafeAction)action) {
             case FailsafeAction::None:
+                break;
+            case FailsafeAction::Engine_lock:
+                arming.disarm(AP_Arming::Method::GCSFAILSAFE);
+                //Lock the contactor of engine
+                rc().channel(8)->set_override(1900,AP_HAL::millis());
+                fence_failsafe_flags = true;
                 break;
             case FailsafeAction::Loiter:
             if(set_mode(mode_loiter, ModeReason::BATTERY_FAILSAFE)){

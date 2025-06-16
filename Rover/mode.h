@@ -419,7 +419,7 @@ private:
     float _avoid_speed;
     Location _origin_pos;
     uint8_t trigger_count = 0;
-    const float object_size_threshold = 80.0f;
+    const float object_size_threshold = 65.0f;
     const float limit_y_down_pixel = 40.0f;
     const float limit_y_up_pixel = 250.0f;
 };
@@ -1088,7 +1088,6 @@ private:
     uint32_t _last_target_status_ms;
     bool _is_follow;
     bool _auto_mode_triggered; //trigger by flag in auto mode
-    bool _path_return = false;
 };
 
 class ModeStalking: public Mode

@@ -279,7 +279,7 @@ private:
         uint32_t log_count;
     } cruise_learn_t;
     cruise_learn_t cruise_learn;
-
+    bool fence_failsafe_flags;
 private:
 
     // Rover.cpp
@@ -418,13 +418,14 @@ private:
         SmartRTL_Hold = 4,
         Terminate     = 5,
         Loiter        = 6,
+        Engine_lock   = 7
     };
 
     enum class Failsafe_Options : uint32_t {
         Failsafe_Option_Active_In_Hold = (1<<0)
     };
 
-    static constexpr int8_t _failsafe_priorities[] = {
+    static constexpr int8_t _failsafe_priorities[] = { (int8_t)FailsafeAction::Engine_lock,
                                                        (int8_t)FailsafeAction::Terminate,
                                                        (int8_t)FailsafeAction::Loiter,
                                                        (int8_t)FailsafeAction::Hold,

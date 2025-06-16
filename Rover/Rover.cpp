@@ -160,7 +160,7 @@ void Rover::get_scheduler_tasks(const AP_Scheduler::Task *&tasks,
     log_bit = MASK_LOG_PM;
 }
 
-constexpr int8_t Rover::_failsafe_priorities[8];
+constexpr int8_t Rover::_failsafe_priorities[9];
 
 Rover::Rover(void) :
     AP_Vehicle(),
